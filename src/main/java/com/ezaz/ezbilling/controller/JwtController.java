@@ -26,7 +26,7 @@ public class JwtController {
 
     @Autowired
     private JwtUtil jwtUtil;
-    @CrossOrigin(origins = "http://localhost:3000/")
+    @CrossOrigin(origins = "http://localhost:8081/")
     @RequestMapping(value="/token", method = RequestMethod.POST)
     public ResponseEntity<?> generateToken(@RequestBody JwtRequest jwtRequest) throws Exception {
         System.out.println(jwtRequest);
