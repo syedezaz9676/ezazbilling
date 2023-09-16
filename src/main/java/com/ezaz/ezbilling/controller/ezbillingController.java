@@ -3,10 +3,15 @@ package com.ezaz.ezbilling.controller;
 import com.ezaz.ezbilling.Bo.EzbillingBo;
 import com.ezaz.ezbilling.model.CompanyDetails;
 import com.ezaz.ezbilling.model.Customer;
+import com.ezaz.ezbilling.model.GstCodeDetails;
 import com.ezaz.ezbilling.repository.CompanyRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
+//@CrossOrigin(origins = "http://localhost:8081/")
 @RestController
 public class ezbillingController {
 
@@ -16,7 +21,7 @@ public class ezbillingController {
     @Autowired
     private EzbillingBo ezbillingBo;
 
-    @CrossOrigin(origins = "http://localhost:3000/")
+    @CrossOrigin(origins = "http://localhost:8081/")
     @PostMapping("/savecompanydetails")
     public void saveCompany(@RequestBody CompanyDetails company){
         companyRepository.save(company);
@@ -27,9 +32,16 @@ public class ezbillingController {
         return "welcome";
     }
     @PostMapping("/savecustomerdetails")
-    public void saveCustomer(@RequestBody Customer customer){
+    public ResponseEntity<?> saveCustomer(@RequestBody Customer customer){
         ezbillingBo.saveCustomerToDB(customer);
-//        return "save success";
+        String success= "sucess";
+        return ResponseEntity.ok(success);
     }
 
+//    @CrossOrigin
+//    @GetMapping("/getgstcodedetails")
+    @RequestMapping(value="/getgstcodedetails", method = RequestMethod.GET)
+    public List<GstCodeDetails> getGstCodeDetails(){
+        return ezbillingBo.getGstCodeDetails();
+    }
 }
