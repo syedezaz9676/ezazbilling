@@ -23,9 +23,9 @@ public class ezbillingController {
 
     @CrossOrigin(origins = "http://localhost:8081/")
     @PostMapping("/savecompanydetails")
-    public void saveCompany(@RequestBody CompanyDetails company){
-        companyRepository.save(company);
-//        return "save success";
+    public String saveCompany(@RequestBody CompanyDetails companyDetails){
+        ezbillingBo.saveCompanyDetails(companyDetails);
+        return "save success";
     }
     @GetMapping("/welcome")
     public String welcome(){
@@ -40,8 +40,18 @@ public class ezbillingController {
 
 //    @CrossOrigin
 //    @GetMapping("/getgstcodedetails")
+    @CrossOrigin(origins = "http://localhost:8081/")
     @RequestMapping(value="/getgstcodedetails", method = RequestMethod.GET)
     public List<GstCodeDetails> getGstCodeDetails(){
         return ezbillingBo.getGstCodeDetails();
     }
+
+
+    @CrossOrigin(origins = "http://localhost:8081/")
+    @RequestMapping(value="/getcompanydetails", method = RequestMethod.GET)
+    public List<CompanyDetails> getCompanysDetails(){
+        return ezbillingBo.getCompanyDetails();
+    }
+
+
 }

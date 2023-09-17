@@ -17,6 +17,6 @@ public class CompanyDetails {
 
     private String name;
 
-    private List<Float> gstPercentage;
+    private List<Integer> gstPercentage;
 
 }
