@@ -6,6 +6,7 @@ import com.ezaz.ezbilling.model.JwtRequest;
 import com.ezaz.ezbilling.model.JwtResponse;
 import com.ezaz.ezbilling.model.JwtUser;
 import com.ezaz.ezbilling.model.User;
+import com.ezaz.ezbilling.repository.UsersRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -24,8 +25,15 @@ public class JwtController {
     @Autowired
      private MyUserDetailsService myUserDetailsService;
 
+    private final UsersRepository usersRepository;
+
     @Autowired
     private JwtUtil jwtUtil;
+
+    public JwtController(AuthenticationManager authenticationManager, UsersRepository usersRepository, UsersRepository usersRepository1) {
+        this.usersRepository = usersRepository1;
+    }
+
     @CrossOrigin(origins = "http://localhost:8081/")
     @RequestMapping(value="/token", method = RequestMethod.POST)
     public ResponseEntity<?> generateToken(@RequestBody JwtRequest jwtRequest) throws Exception {
@@ -47,6 +55,8 @@ public class JwtController {
         JwtResponse jwtResponse = new JwtResponse();
         jwtResponse.setToken(token);
         JwtUser user = new JwtUser();
+        User userDetailsByID =usersRepository.findByUsername(userDetails.getUsername());
+        user.setId(userDetailsByID.getId());
         user.setUsername(userDetails.getUsername());
         user.setPassword(userDetails.getPassword());
         user.setRole(userDetails.getAuthorities());

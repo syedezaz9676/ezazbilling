@@ -1,11 +1,19 @@
 package com.ezaz.ezbilling.repository.impl;
 
+import com.ezaz.ezbilling.model.CompanyNames;
 import com.ezaz.ezbilling.model.Customer;
+import com.ezaz.ezbilling.model.CustomerNames;
 import com.ezaz.ezbilling.repository.CustomerRepositoryCustom;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.aggregation.AggregationOperation;
+import org.springframework.data.mongodb.core.aggregation.AggregationResults;
+import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+
+import java.util.List;
 
 public class CustomerRepositoryImpl implements CustomerRepositoryCustom {
     @Autowired
@@ -19,4 +27,19 @@ public class CustomerRepositoryImpl implements CustomerRepositoryCustom {
 
         return mongoTemplate.findOne(query, Customer.class);
     }
+
+    @Override
+    public List<CustomerNames> getCustomerNames(String id) {
+        AggregationOperation matchOperation = Aggregation.match(
+                Criteria.where("dgst").is(id)
+        );
+        Aggregation aggregation = Aggregation.newAggregation(matchOperation,
+                Aggregation.project("id", "cname")
+        );
+
+        AggregationResults<CustomerNames> results = mongoTemplate.aggregate(aggregation, "customers", CustomerNames.class);
+        return results.getMappedResults();
+    }
+
+
 }
