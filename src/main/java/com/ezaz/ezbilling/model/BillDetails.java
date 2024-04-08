@@ -4,6 +4,7 @@ import lombok.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Date;
 
 
 @Data
@@ -15,8 +16,10 @@ public class BillDetails {
 
     private String name;
     private String userID;
-    private LocalDateTime date;
+    private String date;
+    private String bno;
     private List<ItemList> itemList;
+
 }
 
 

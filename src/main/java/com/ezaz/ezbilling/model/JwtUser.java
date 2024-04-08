@@ -17,4 +17,10 @@ public class JwtUser {
     private String username;
     private String password;
     private Collection<? extends GrantedAuthority> role;
+    private String prefix;
+    private String firmName;
+    private String Address;
+    private String gstNo;
+    private String contact;
+    private String state;
 }

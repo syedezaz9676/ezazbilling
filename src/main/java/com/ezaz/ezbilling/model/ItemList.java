@@ -9,7 +9,8 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 public class ItemList {
-    private int noOfUnits;
+    private Integer noofunites;
     private String pname;
-    private int rate;
+    private Float rate;
+    private Integer disc;
 }

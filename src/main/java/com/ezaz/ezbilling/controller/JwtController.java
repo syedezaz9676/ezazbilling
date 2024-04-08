@@ -60,6 +60,14 @@ public class JwtController {
         user.setUsername(userDetails.getUsername());
         user.setPassword(userDetails.getPassword());
         user.setRole(userDetails.getAuthorities());
+        user.setPrefix(userDetailsByID.getPrefix());
+        user.setFirmName(userDetailsByID.getFirmName());
+        user.setAddress(userDetailsByID.getAddress());
+        user.setGstNo(userDetailsByID.getGstNo());
+        user.setContact(userDetailsByID.getContact());
+        user.setState(userDetailsByID.getState());
+
+
         jwtResponse.setUser(user);
         return ResponseEntity.ok(jwtResponse);
     }

@@ -2,6 +2,7 @@ package com.ezaz.ezbilling.repository.impl;
 
 import com.ezaz.ezbilling.model.CompanyNames;
 import com.ezaz.ezbilling.model.Customer;
+import com.ezaz.ezbilling.model.CustomerDetailswithGstNo;
 import com.ezaz.ezbilling.model.CustomerNames;
 import com.ezaz.ezbilling.repository.CustomerRepositoryCustom;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,5 +42,10 @@ public class CustomerRepositoryImpl implements CustomerRepositoryCustom {
         return results.getMappedResults();
     }
 
+    @Override
+    public List<CustomerDetailswithGstNo> findGstCustomers() {
+        Query query = new Query(Criteria.where("ctno").ne("not avaliable"));
+        return mongoTemplate.find(query, CustomerDetailswithGstNo.class, "customers");
+    }
 
 }

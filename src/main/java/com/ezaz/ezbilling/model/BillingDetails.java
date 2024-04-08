@@ -5,7 +5,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.data.mongodb.core.mapping.Document;
-import java.sql.Date;
+import java.util.Date;
 
 @Data
 @Setter
@@ -27,7 +27,21 @@ public class BillingDetails {
     private Integer mrp;
     private String product_company;
     private Integer disc;
-    private Integer Amount_after_disc;
+    private Float amount_after_disc;
     private String dgst;
+    private Float gross_amount;
+    private Float rate;
+    private Float gstamount;
+    private Double total_tax;
+    private Double total_gross;
+    private Double total_amount;
+
+
+    public java.sql.Date getBilling_date() {
+        if (billing_date != null) {
+            return new java.sql.Date(billing_date.getTime());
+        }
+        return null;
+    }
 }
 

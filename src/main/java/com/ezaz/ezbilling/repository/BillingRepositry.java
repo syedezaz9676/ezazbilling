@@ -1,9 +1,26 @@
 package com.ezaz.ezbilling.repository;
 
+import com.ezaz.ezbilling.model.BillAggregationResult;
 import com.ezaz.ezbilling.model.BillDetails;
+import com.ezaz.ezbilling.model.BillingDetails;
 import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.mongodb.repository.Query;
+import org.springframework.stereotype.Repository;
 
-public interface BillingRepositry  {
+import java.util.Date;
+import java.util.List;
 
-    String getMaxBillNo(String dgst);
+@Repository
+public interface BillingRepositry   {
+
+    BillingDetails getMaxBillNo(String dgst);
+
+    List<String> findBnoByCnoAndBillingDateBetween(String cno, Date startDate, Date endDate);
+
+    @Query(value = "{'bno': ?0}")
+    List<BillAggregationResult> getGstDetails(String bno);
+
+//    List<String> findBnosByCnoAndBillingDateBetween(String cno, Date parse, Date parse1);
+
+
 }

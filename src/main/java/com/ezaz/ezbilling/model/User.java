@@ -18,4 +18,10 @@ public class User {
     private String username;
     private String password;
     private List<String> role;
+    private String prefix;
+    private String firmName;
+    private String Address;
+    private String gstNo;
+    private String contact;
+    private String state;
 }

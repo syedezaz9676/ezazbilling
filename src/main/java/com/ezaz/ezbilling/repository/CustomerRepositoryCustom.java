@@ -1,6 +1,7 @@
 package com.ezaz.ezbilling.repository;
 
 import com.ezaz.ezbilling.model.Customer;
+import com.ezaz.ezbilling.model.CustomerDetailswithGstNo;
 import com.ezaz.ezbilling.model.CustomerNames;
 import org.springframework.stereotype.Repository;
 
@@ -12,4 +13,5 @@ public interface CustomerRepositoryCustom {
 
     public List<CustomerNames> getCustomerNames(String id);
 
+    List<CustomerDetailswithGstNo> findGstCustomers();
 }

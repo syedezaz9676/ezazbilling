@@ -2,6 +2,7 @@ package com.ezaz.ezbilling.Bo;
 
 import com.ezaz.ezbilling.model.*;
 
+import java.text.ParseException;
 import java.util.List;
 import java.util.Optional;
 
@@ -34,6 +35,16 @@ public interface EzbillingBo {
     public List<ProductNames> getProductDetailsByCompany(String comapanyName);
 
     public List<Customer> getCustomerByDgst(String dgst);
+
+    public String saveBillItems(List<BillingDetails> billingDetailsList);
+
+    public List<BillingDetails> getSavedBillDetailsByinvoiceNo(String invoiceNo);
+
+    public BillDetails getBillDetailsByInvoiceNo(String invoiceNo);
+
+    public String updateBillItems(List<BillingDetails> billingDetailsList);
+
+    public List<GstReport>  getGstDetailsByDate(String startDate, String endDate) throws ParseException;
 
     }
 

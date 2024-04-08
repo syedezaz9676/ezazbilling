@@ -10,4 +10,6 @@ import java.util.List;
 public interface CompanyRepository extends MongoRepository<CompanyDetails, String> {
 
     List<CompanyDetails> findAllByDgst(String id);
+
+
 }
