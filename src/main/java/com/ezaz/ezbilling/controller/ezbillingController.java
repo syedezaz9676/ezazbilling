@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.text.ParseException;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -37,6 +38,7 @@ public class ezbillingController {
     }
     @PostMapping("/savecustomerdetails")
     public ResponseEntity<?> saveCustomer(@RequestBody Customer customer){
+        System.out.println("customer"+customer.getCname());
         ezbillingBo.saveCustomerToDB(customer);
         String success= "sucess";
         return ResponseEntity.ok(success);
@@ -117,7 +119,7 @@ public class ezbillingController {
     }
     @CrossOrigin(origins = "http://localhost:8081/")
     @PostMapping("/savebillingdetails")
-    public ResponseEntity<?> savebillingdetails(@RequestBody List<BillingDetails> billDetails){
+    public ResponseEntity<?> savebillingdetails(@RequestBody List<BillingDetails> billDetails) throws ParseException {
         System.out.println(billDetails);
         String Invoice= ezbillingBo.saveBillItems(billDetails) ;
         return ResponseEntity.ok(Invoice);
@@ -150,6 +152,13 @@ public class ezbillingController {
     @RequestMapping(value="/getgstdetails", method = RequestMethod.GET)
     public List<GstReport> getGstDetailsOfCustomer (@RequestParam("startDate") String startDate, @RequestParam("endDate") String endDate) throws ParseException {
      return ezbillingBo.getGstDetailsByDate(startDate,endDate);
+
+    }
+
+    @CrossOrigin(origins = "http://localhost:8081/")
+    @RequestMapping(value="/gethsngstdetails", method = RequestMethod.GET)
+    public List<SoldStockSummary> getGstDetailsForHsnCode (@RequestParam("startDate") String startDate, @RequestParam("endDate") String endDate) throws ParseException {
+        return ezbillingBo.getGstDetailsForHsnCode(startDate,endDate);
 
     }
 

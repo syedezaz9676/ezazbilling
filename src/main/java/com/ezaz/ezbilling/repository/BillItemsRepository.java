@@ -15,7 +15,7 @@ public interface BillItemsRepository extends MongoRepository<BillingDetails, Str
 
     void deleteByBno(String bno);
     @Query("{ 'cno' : ?0, 'billing_date' : { $gte: ?1, $lte: ?2 } }, { 'bno': 1 }")
-    List<BillNo> findBnoByCnoAndBillingDateBetween(int cno, String startDate, String endDate);
+    List<BillNo> findBnoByCnoAndBillingDateBetween(String cno, String startDate, String endDate);
 
     List<BillingDetails> findByCno(int cno);
 

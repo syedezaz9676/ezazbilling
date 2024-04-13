@@ -11,6 +11,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 public class BillGstDetails {
-    private String bno;
     private List<sumOfGst> sumOfGsts;
+    private Double totalTaxableSum;
+    private Double totalofSum;
 }

@@ -21,13 +21,4 @@ public class BillAggregationResult {
     private String billingDate;
     private String bno;
 
-
-
-//    public java.sql.Date getBillingDate() {
-//        if (billingDate != null) {
-//
-//            return new java.sql.Date(billingDate.getTime());
-//        }
-//        return null;
-//    }
 }

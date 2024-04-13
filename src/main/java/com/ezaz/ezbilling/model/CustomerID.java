@@ -5,17 +5,13 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-
-import java.util.List;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 @Setter
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
-public class GstReport {
-
-    private String customerName;
-    private String gstNo;
-    private List<BillGstDetails> billGstDetails;
-
+@Document(collection = "customers")
+public class CustomerID {
+    private String id;
 }

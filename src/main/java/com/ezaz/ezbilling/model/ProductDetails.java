@@ -14,7 +14,6 @@ import org.springframework.data.mongodb.core.mapping.Field;
 @NoArgsConstructor
 @Document(collection = "product")
 public class ProductDetails {
-
     @Id
     private String id;
     private String pname;

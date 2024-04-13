@@ -1,9 +1,6 @@
 package com.ezaz.ezbilling.repository.impl;
 
-import com.ezaz.ezbilling.model.BillAggregationResult;
-import com.ezaz.ezbilling.model.BillDetails;
-import com.ezaz.ezbilling.model.BillingDetails;
-import com.ezaz.ezbilling.model.Customer;
+import com.ezaz.ezbilling.model.*;
 import com.ezaz.ezbilling.repository.BillingRepositry;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Example;
@@ -14,11 +11,13 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.aggregation.AggregationOperation;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
+import org.springframework.data.mongodb.core.aggregation.ArithmeticOperators;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.repository.query.FluentQuery;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Date;
@@ -72,7 +71,7 @@ public class BillingRepositryImpl  implements BillingRepositry {
 
         AggregationOperation match = Aggregation.match(org.springframework.data.mongodb.core.query.Criteria.where("bno").is(bno));
         AggregationOperation group = Aggregation.group("product_gst", "bno" ,"billing_date")
-                .sum("amount").as("totalAmount")
+                .sum("Amount_after_disc").as("totalAmount")
                 .first("billing_date").as("billingDate")
                 .first("product_gst").as("product_gst")
                 .first("bno").as("bno")
@@ -88,6 +87,75 @@ public class BillingRepositryImpl  implements BillingRepositry {
 
         return gstDetailsList;
     }
+
+//    public List<SoldStockSummary> getSoldStockSummary(String startDate, String endDate) {
+//        Aggregation aggregation = Aggregation.newAggregation(
+//                Aggregation.match(Criteria.where("billing_date").gte(startDate).lte(endDate)),
+//                Aggregation.lookup("customers", "cno", "cno", "customers"),
+//                Aggregation.match(Criteria.where("customers.ctno").ne("not available").and("customers.isigst").is("No")),
+//                Aggregation.project("hsn_code", "Amount_after_disc", "qty","product_gst"), // Include hsn_code in projection
+//                Aggregation.group("hsn_code")
+//                        .addToSet("hsn_code").as("hsn_code")
+//                        .first("product_gst").as("product_gst")
+//                        .sum("Amount_after_disc").as("totalAmount")
+//                        .sum("qty").as("totalQty")
+//
+//        );
+//
+//        AggregationResults<SoldStockSummary> results = mongoTemplate.aggregate(aggregation, "soldstock", SoldStockSummary.class);
+//        return results.getMappedResults();
+//    }
+
+    public List<SoldStockSummary> getSoldStockSummaryForHsncode(String startDate, String endDate) {
+        Aggregation aggregation = Aggregation.newAggregation(
+                Aggregation.match(Criteria.where("billing_date").gte(startDate).lte(endDate)), // Filtering based on billing date
+                Aggregation.lookup("customers", "cno", "cno", "customers"), // Perform a left outer join with the customers collection
+                Aggregation.match(Criteria.where("customers.ctno").ne("not available").and("customers.isigst").is("Yes")), // Filter customers based on certain conditions
+                Aggregation.project("hsn_code", "Amount_after_disc", "qty", "product_gst"), // Include necessary fields in the projection stage
+                Aggregation.group("hsn_code")
+                        .addToSet("hsn_code").as("hsn_code") // Group by HSN code
+                        .first("product_gst").as("product_gst") // Take the first product GST value encountered
+                        .sum("Amount_after_disc").as("totalAmount") // Sum the total amount after discount
+                        .sum("qty").as("totalQty"), // Sum the total quantity
+                Aggregation.project("hsn_code", "totalAmount", "totalQty", "product_gst"), // Reproject fields
+                Aggregation.project()
+                        .andExpression("totalAmount * product_gst / 100").as("igst") // Calculate the tax amount
+                        .and("hsn_code").as("hsn_code")
+                        .and("totalAmount").as("totalAmount")
+                        .and("totalQty").as("totalQty")
+                        .and("product_gst").as("product_gst")
+        );
+
+        AggregationResults<SoldStockSummary> results = mongoTemplate.aggregate(aggregation, "soldstock", SoldStockSummary.class); // Execute aggregation pipeline
+        return results.getMappedResults(); // Return the mapped results
+    }
+
+    public List<SoldStockSummary> getSoldStockSummary(String startDate, String endDate) {
+        Aggregation aggregation = Aggregation.newAggregation(
+                Aggregation.match(Criteria.where("billing_date").gte(startDate).lte(endDate)), // Filtering based on billing date
+                Aggregation.lookup("customers", "cno", "cno", "customers"), // Perform a left outer join with the customers collection
+                Aggregation.match(Criteria.where("customers.ctno").ne("not available").and("customers.isigst").is("No")), // Filter customers based on certain conditions
+                Aggregation.project("hsn_code", "Amount_after_disc", "qty", "product_gst"), // Include necessary fields in the projection stage
+                Aggregation.group("hsn_code")
+                        .addToSet("hsn_code").as("hsn_code") // Group by HSN code
+                        .first("product_gst").as("product_gst") // Take the first product GST value encountered
+                        .sum("Amount_after_disc").as("totalAmount") // Sum the total amount after discount
+                        .sum("qty").as("totalQty"), // Sum the total quantity
+                Aggregation.project("hsn_code", "totalAmount", "totalQty", "product_gst"), // Reproject fields
+                Aggregation.project()
+                        .andExpression("totalAmount * product_gst / 100").as("taxAmount") // Calculate the tax amount
+                        .and("hsn_code").as("hsn_code")
+                        .and("totalAmount").as("totalAmount")
+                        .and("totalQty").as("totalQty")
+                        .and("product_gst").as("product_gst")
+        );
+
+        AggregationResults<SoldStockSummary> results = mongoTemplate.aggregate(aggregation, "soldstock", SoldStockSummary.class); // Execute aggregation pipeline
+        return results.getMappedResults(); // Return the mapped results
+    }
+
+
+
 
 }
 

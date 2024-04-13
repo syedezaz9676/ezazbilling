@@ -14,6 +14,8 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 public class EzbillingBoImpl implements EzbillingBo {
@@ -66,8 +68,6 @@ public class EzbillingBoImpl implements EzbillingBo {
 
     @Override
     public void saveCustomerToDB(Customer customer) {
-        Customer customerWithMaxId = customerRepository.maxCustomer();
-        customer.setCno(customerWithMaxId.getCno()+1);
         customerRepository.save(customer);
     }
 
@@ -127,9 +127,9 @@ public class EzbillingBoImpl implements EzbillingBo {
     }
 
     @Override
-    public String saveBillItems(List<BillingDetails> billingDetailsList) {
+    public String saveBillItems(List<BillingDetails> billingDetailsList) throws ParseException {
           BillingDetails firstBillItem = billingDetailsList.get(0);
-
+         final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
           User user= usersRepository.findById(firstBillItem.getDgst()).orElse(null);
 
           BillingDetails billingDetailsforMaxBillno = billingRepositry.getMaxBillNo(user.getId());
@@ -152,6 +152,12 @@ public class EzbillingBoImpl implements EzbillingBo {
           }
         for (BillingDetails billingDetails:billingDetailsList
              ) {
+//            String formattedDate1 = dateFormat.format(billingDetails.getBilling_date());
+//            Date parsedDate = dateFormat.parse(formattedDate1);
+//            System.out.println("setdate"+parsedDate);
+
+//               billingDetails.setBilling_date(parsedDate);
+               billingDetails.setBilling_date(billingDetails.getBilling_date().substring(0,10));
                billingDetails.setBno(newInvoiceNo);
                billingDetails.setAmount_after_disc((billingDetails.getAmount()*billingDetails.getQty())-percentageUtils.getPercentageAmount(billingDetails.getAmount()*billingDetails.getQty(),billingDetails.getDisc()));
                System.out.println(percentageUtils.getPercentageAmount(billingDetails.getAmount()*billingDetails.getQty(),billingDetails.getProduct_gst()));
@@ -246,65 +252,77 @@ public class EzbillingBoImpl implements EzbillingBo {
         List<CustomerDetailswithGstNo> customerDetailswithGstNos = customerRepositoryCustom.findGstCustomers();
 
         for (CustomerDetailswithGstNo customerDetailswithGstNo : customerDetailswithGstNos) {
-            List<sumOfGst> sumOfGsts = new ArrayList<>();
+            System.out.println("customerDetailswithGstNo"+customerDetailswithGstNo.getId());
             GstReport gstReport = new GstReport();
-            List<String> bills = new ArrayList<>();
             gstReport.setCustomerName(customerDetailswithGstNo.getCname());
             gstReport.setGstNo(customerDetailswithGstNo.getCtno());
 
-            List<BillNo> billnos = billItemsRepository.findBnoByCnoAndBillingDateBetween(Integer.parseInt(customerDetailswithGstNo.getCno()), startDate, endDate);
-            List<BillGstDetails> billGstDetailsList = new ArrayList<>();
-            BillGstDetails billGstDetails = new BillGstDetails();
+            List<BillNo> billnos = billItemsRepository.findBnoByCnoAndBillingDateBetween(customerDetailswithGstNo.getId(), startDate, endDate);
+            Map<String, BillGstDetails> billGstDetailsMap = new HashMap<>();
+
             for (BillNo bno : billnos) {
+                System.out.println("billno"+ bno.getBno());
+                BillGstDetails billGstDetails = new BillGstDetails();
+                billGstDetails.setSumOfGsts(new ArrayList<>());
 
+                Set<Integer> addedGstValues = new HashSet<>(); // To keep track of added GST values for each BillGstDetails
 
-//                billGstDetails.setBno(bno.getBno());
                 List<BillAggregationResult> billAggregationResults = billingRepositry.getGstDetails(bno.getBno());
 
+                Double totalSum = 0.0;
+                Double totalTaxableSum = 0.0;
+
                 for (BillAggregationResult billAggregationResult : billAggregationResults) {
-//                    BillGstDetails billGstDetails = new BillGstDetails();
-//                    GstReport gstReport1 = checkBno(gstReports,billAggregationResult);
-                        sumOfGst sumOfGst = new sumOfGst();
-                        sumOfGst.setGst(billAggregationResult.getProduct_gst());
-                        sumOfGst.setSumOfGstAmount(billAggregationResult.getTotalAmount());
-                        sumOfGst.setBno(billAggregationResult.getBno());
-                        sumOfGst.setBillingDate(billAggregationResult.getBillingDate());
+                    sumOfGst sumOfGst = new sumOfGst();
+                    sumOfGst.setGst(billAggregationResult.getProduct_gst());
+                    sumOfGst.setSumOfGstAmount(billAggregationResult.getTotalAmount());
+                    sumOfGst.setBno(billAggregationResult.getBno());
+                    sumOfGst.setBillingDate(billAggregationResult.getBillingDate());
 
-                        // Check if the current sumOfGst already exists in the sumOfGsts list
-                        boolean exists = false;
-                        for (sumOfGst existingSum : sumOfGsts) {
-                            if (existingSum.getBno().equals(sumOfGst.getBno()) && existingSum.getGst() == sumOfGst.getGst()) {
-                                exists = true;
-                                break;
-                            }
-                        }
+                    // Calculate taxable amount by subtracting GST amount from total amount
+                    Double taxableAmount = sumOfGst.getSumOfGstAmount() - (sumOfGst.getSumOfGstAmount() * sumOfGst.getGst() / 100.0);
 
-//                         If it doesn't exist, add it to the list
-                        if (!exists) {
+                    // Check if the current GST value has already been added for this BillGstDetails
+                    if (!addedGstValues.contains(sumOfGst.getGst())) {
+                        addedGstValues.add(sumOfGst.getGst());
 
-                            sumOfGsts.add(sumOfGst);
-
-                        }
-
-
+                        billGstDetails.getSumOfGsts().add(sumOfGst);
+                        totalSum += sumOfGst.getSumOfGstAmount(); // Calculate total sum of GST amounts
+                        totalTaxableSum += taxableAmount; // Calculate total taxable sum
+                    }
                 }
 
-
-                bills.add(bno.getBno());
+                // Set total sum of GST amounts and taxable sum for the current BillGstDetails
+                billGstDetails.setTotalofSum(totalSum);
+                billGstDetails.setTotalTaxableSum(totalTaxableSum);
+                billGstDetailsMap.put(bno.getBno(), billGstDetails);
             }
-            billGstDetails.setSumOfGsts(sumOfGsts);
-            billGstDetailsList.add(billGstDetails);
 
+            List<BillGstDetails> billGstDetailsList = new ArrayList<>(billGstDetailsMap.values());
             gstReport.setBillGstDetails(billGstDetailsList);
-            if (gstReport.getCustomerName() != null || gstReport.getGstNo() != null) {
 
+            if (gstReport.getCustomerName() != null || gstReport.getGstNo() != null) {
                 gstReports.add(gstReport);
             }
-
         }
 
         return gstReports;
     }
+
+
+    public List<SoldStockSummary> getGstDetailsForHsnCode(String startDate, String endDate){
+
+        List<SoldStockSummary> soldStockSummaries =billingRepositry.getSoldStockSummary(startDate,endDate);
+        List<SoldStockSummary> soldStockSummariesWithIgst =billingRepositry.getSoldStockSummaryForHsncode(startDate,endDate);
+
+        List<SoldStockSummary> finalSoldStockSummaries = Stream.concat(soldStockSummaries.stream(), soldStockSummariesWithIgst.stream())
+                .collect(Collectors.toList());
+
+        return finalSoldStockSummaries;
+
+    }
+
+
 
 //public GstReport checkBno(List<GstReport> gstReports,BillAggregationResult billAggregationResult){
 //

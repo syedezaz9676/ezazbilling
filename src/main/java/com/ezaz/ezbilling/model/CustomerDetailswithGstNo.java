@@ -13,6 +13,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @NoArgsConstructor
 @Document(collection = "customers")
 public class CustomerDetailswithGstNo {
+    private String id;
     private String cno;
     private String cname;
     private String ctno;

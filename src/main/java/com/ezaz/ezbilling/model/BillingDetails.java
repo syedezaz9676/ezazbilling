@@ -1,11 +1,14 @@
 package com.ezaz.ezbilling.model;
+import com.ezaz.ezbilling.configuration.LocalDateDeserializer;
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.data.mongodb.core.mapping.Document;
-import java.util.Date;
+import java.time.LocalDate;
 
 @Data
 @Setter
@@ -20,7 +23,7 @@ public class BillingDetails {
     private Integer product_gst;
     private Integer qty;
     private Float amount;
-    private Date billing_date;
+    private String billing_date;
     private String free;
     private String hsn_code;
     private String unites_per;
@@ -37,9 +40,9 @@ public class BillingDetails {
     private Double total_amount;
 
 
-    public java.sql.Date getBilling_date() {
+    public String getBilling_date() {
         if (billing_date != null) {
-            return new java.sql.Date(billing_date.getTime());
+            return billing_date.substring(0,10);
         }
         return null;
     }

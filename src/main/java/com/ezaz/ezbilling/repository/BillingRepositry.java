@@ -3,10 +3,12 @@ package com.ezaz.ezbilling.repository;
 import com.ezaz.ezbilling.model.BillAggregationResult;
 import com.ezaz.ezbilling.model.BillDetails;
 import com.ezaz.ezbilling.model.BillingDetails;
+import com.ezaz.ezbilling.model.SoldStockSummary;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
 import java.util.Date;
 import java.util.List;
 
@@ -21,6 +23,8 @@ public interface BillingRepositry   {
     List<BillAggregationResult> getGstDetails(String bno);
 
 //    List<String> findBnosByCnoAndBillingDateBetween(String cno, Date parse, Date parse1);
+   List<SoldStockSummary> getSoldStockSummary(String startDate, String endDate);
 
+   List<SoldStockSummary> getSoldStockSummaryForHsncode(String startDate, String endDate);
 
 }
