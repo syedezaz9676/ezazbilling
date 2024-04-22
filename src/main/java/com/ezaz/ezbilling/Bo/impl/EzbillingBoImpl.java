@@ -10,7 +10,6 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 
-import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -42,7 +41,11 @@ public class EzbillingBoImpl implements EzbillingBo {
 
     private final PercentageUtils percentageUtils;
 
-    public EzbillingBoImpl(CustomerRepository customerRepository, GstCodeDetailsRepo gstCodeDetailsRepo, CompanyRepository companyRepository, ProductRepository productRepository, ProductDetailsRepository productDetailsRepository, CompanyDetailsRepository companyDetailsRepository, CustomerRepositoryCustom customerRepositoryCustom, UsersRepository usersRepository, BillingRepositry billingRepositry, BillItemsRepository billItemsRepository, PercentageUtils percentageUtils) {
+    private final StockItemDetails stockItemDetails;
+
+    private final StockRepository stockRepository;
+
+    public EzbillingBoImpl(CustomerRepository customerRepository, GstCodeDetailsRepo gstCodeDetailsRepo, CompanyRepository companyRepository, ProductRepository productRepository, ProductDetailsRepository productDetailsRepository, CompanyDetailsRepository companyDetailsRepository, CustomerRepositoryCustom customerRepositoryCustom, UsersRepository usersRepository, BillingRepositry billingRepositry, BillItemsRepository billItemsRepository, PercentageUtils percentageUtils, StockItemDetails stockItemDetails, StockRepository stockRepository) {
         this.customerRepository = customerRepository;
         this.gstCodeDetailsRepo = gstCodeDetailsRepo;
         this.companyRepository = companyRepository;
@@ -54,6 +57,8 @@ public class EzbillingBoImpl implements EzbillingBo {
         this.billingRepositry = billingRepositry;
         this.billItemsRepository = billItemsRepository;
         this.percentageUtils = percentageUtils;
+        this.stockItemDetails = stockItemDetails;
+        this.stockRepository = stockRepository;
     }
 
     @Override
@@ -152,11 +157,13 @@ public class EzbillingBoImpl implements EzbillingBo {
           }
         for (BillingDetails billingDetails:billingDetailsList
              ) {
-//            String formattedDate1 = dateFormat.format(billingDetails.getBilling_date());
-//            Date parsedDate = dateFormat.parse(formattedDate1);
-//            System.out.println("setdate"+parsedDate);
+            StockDetails stockDetails = getStockItemDetails(billingDetails.getProduct_name());
 
-//               billingDetails.setBilling_date(parsedDate);
+            StockDetails newStockDetails = new StockDetails();
+            newStockDetails.set_id(stockDetails.get_id());
+            newStockDetails.setIn_stock_units(stockDetails.getIn_stock_units()-billingDetails.getQty());
+            stockRepository.updateBillItemInStock(newStockDetails);
+
                billingDetails.setBilling_date(billingDetails.getBilling_date().substring(0,10));
                billingDetails.setBno(newInvoiceNo);
                billingDetails.setAmount_after_disc((billingDetails.getAmount()*billingDetails.getQty())-percentageUtils.getPercentageAmount(billingDetails.getAmount()*billingDetails.getQty(),billingDetails.getDisc()));
@@ -222,7 +229,9 @@ public class EzbillingBoImpl implements EzbillingBo {
     @Override
     public String updateBillItems(List<BillingDetails> billingDetailsList) {
         try {
+
             BillingDetails firstBillItem = billingDetailsList.get(0);
+            List<BillingDetails> savedBillDetails = billItemsRepository.findByBno(firstBillItem.getBno());
             // Asynchronously delete existing bill items
             CompletableFuture<Void> deleteFuture = CompletableFuture.runAsync(() -> {
                 billItemsRepository.deleteByBno(firstBillItem.getBno());
@@ -233,8 +242,41 @@ public class EzbillingBoImpl implements EzbillingBo {
 
             // Update and save new billing details
             for (BillingDetails billingDetails : billingDetailsList) {
+                Optional<BillingDetails> result = savedBillDetails.stream()
+                        .filter(billingDetails1 -> billingDetails1.getProduct_name().equals(billingDetails.getProduct_name()))
+                        .findFirst();
+
+                if (result.isPresent()) {
+                    BillingDetails foundBillingDetails = result.get();
+                    System.out.println("Found: " + foundBillingDetails);
+                    if(foundBillingDetails.getQty()>billingDetails.getQty()){
+                        StockDetails stockDetails = getStockItemDetails(billingDetails.getProduct_name());
+
+                        StockDetails newStockDetails = new StockDetails();
+                        newStockDetails.set_id(stockDetails.get_id());
+                        int differenceUnits= foundBillingDetails.getQty()-billingDetails.getQty();
+                        newStockDetails.setIn_stock_units(stockDetails.getIn_stock_units()+differenceUnits);
+                        stockRepository.updateBillItemInStock(newStockDetails);
+
+                    }else if(foundBillingDetails.getQty()<billingDetails.getQty()){
+                        StockDetails stockDetails = getStockItemDetails(billingDetails.getProduct_name());
+                        int differenceUnits= billingDetails.getQty()-foundBillingDetails.getQty();
+                        StockDetails newStockDetails = new StockDetails();
+                        newStockDetails.set_id(stockDetails.get_id());
+                        newStockDetails.setIn_stock_units(stockDetails.getIn_stock_units()-differenceUnits);
+                        stockRepository.updateBillItemInStock(newStockDetails);
+
+                    }
+
+                } else {
+                    StockDetails stockDetails = getStockItemDetails(billingDetails.getProduct_name());
+
+                    StockDetails newStockDetails = new StockDetails();
+                    newStockDetails.set_id(stockDetails.get_id());
+                    newStockDetails.setIn_stock_units(stockDetails.getIn_stock_units()-billingDetails.getQty());
+                    stockRepository.updateBillItemInStock(newStockDetails);
+                }
                 billingDetails.setAmount_after_disc((billingDetails.getAmount() * billingDetails.getQty()) - percentageUtils.getPercentageAmount(billingDetails.getAmount() * billingDetails.getQty(), billingDetails.getDisc()));
-                System.out.println(percentageUtils.getPercentageAmount(billingDetails.getAmount() * billingDetails.getQty(), billingDetails.getProduct_gst()));
                 billItemsRepository.save(billingDetails);
             }
             return firstBillItem.getBno();
@@ -275,19 +317,19 @@ public class EzbillingBoImpl implements EzbillingBo {
                 for (BillAggregationResult billAggregationResult : billAggregationResults) {
                     sumOfGst sumOfGst = new sumOfGst();
                     sumOfGst.setGst(billAggregationResult.getProduct_gst());
-                    sumOfGst.setSumOfGstAmount(billAggregationResult.getTotalAmount());
+                    sumOfGst.setSumOfGstAmount(billAggregationResult.getTotalAmount()-(billAggregationResult.getTotalAmount()*billAggregationResult.getProduct_gst()/ 100.0));
                     sumOfGst.setBno(billAggregationResult.getBno());
                     sumOfGst.setBillingDate(billAggregationResult.getBillingDate());
 
                     // Calculate taxable amount by subtracting GST amount from total amount
-                    Double taxableAmount = sumOfGst.getSumOfGstAmount() - (sumOfGst.getSumOfGstAmount() * sumOfGst.getGst() / 100.0);
+                    Double taxableAmount = billAggregationResult.getTotalAmount()-(billAggregationResult.getTotalAmount()*billAggregationResult.getProduct_gst()/ 100.0);
 
                     // Check if the current GST value has already been added for this BillGstDetails
                     if (!addedGstValues.contains(sumOfGst.getGst())) {
                         addedGstValues.add(sumOfGst.getGst());
 
                         billGstDetails.getSumOfGsts().add(sumOfGst);
-                        totalSum += sumOfGst.getSumOfGstAmount(); // Calculate total sum of GST amounts
+                        totalSum += billAggregationResult.getTotalAmount(); // Calculate total sum of GST amounts
                         totalTaxableSum += taxableAmount; // Calculate total taxable sum
                     }
                 }
@@ -322,17 +364,46 @@ public class EzbillingBoImpl implements EzbillingBo {
 
     }
 
+    public StockDetails getStockItemDetails(String productId) {
+        return stockItemDetails.findByPid(productId);
+    }
+
+    public void saveStockDetails(StockDetails stockDetails){
+        System.out.println("stock"+stockDetails.toString());
+        StockDetails stockDetail= new StockDetails();
+        stockDetail.set_id(stockDetails.get_id());
+        stockDetail.setPid(stockDetails.getPid());
+        stockDetail.setIn_stock_units(stockDetails.getIn_stock_units()+stockDetails.getNewStock());
+        stockDetail.setPname(stockDetails.getPname());
+        stockDetail.setLast_updated_date(stockDetails.getLast_updated_date());
+        stockRepository.updateStock(stockDetail);;
+    }
 
 
-//public GstReport checkBno(List<GstReport> gstReports,BillAggregationResult billAggregationResult){
-//
-//    for (GstReport gstReport:gstReports
-//         ) {
-//        if(gstReport.getBillGstDetails().getBno() == billAggregationResult.getBno()){
-//            return gstReport;
-//        }
-//    }
-//    return null;
-//}
+
+    public void copyProductToStock(String dgst){
+        List<ProductDetails> productDetails= productRepository.findAllByDgst(dgst);
+
+        for (ProductDetails productDetail: productDetails
+             ) {
+            StockDetails stockDetails = new StockDetails();
+            stockDetails.setPid(productDetail.getId());
+            stockDetails.setPname(productDetail.getPname());
+            stockDetails.setIn_stock_units(0.00);
+            stockDetails.setDgst(dgst);
+            stockDetails.setPcom(productDetail.getPcom());
+            stockItemDetails.save(stockDetails);
+
+        }
+    }
+
+    public List<StockDetails> getStockDetailsByDgst(String dgst){
+        List<StockDetails> stockDetails = stockItemDetails.findByDgst(dgst);
+        return stockDetails;
+    }
+
+    public List<CompanyBillingSummary> getSalesDetails(String startDate,String endDate){
+        return billingRepositry.getCompanyBillingSummary(startDate,endDate);
+    }
 
 }

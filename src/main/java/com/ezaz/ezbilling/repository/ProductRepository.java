@@ -3,7 +3,6 @@ package com.ezaz.ezbilling.repository;
 import com.ezaz.ezbilling.model.ProductDetails;
 import com.ezaz.ezbilling.model.ProductNames;
 import org.springframework.data.mongodb.repository.MongoRepository;
-import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;

@@ -14,4 +14,6 @@ public interface CustomerRepositoryCustom {
     public List<CustomerNames> getCustomerNames(String id);
 
     List<CustomerDetailswithGstNo> findGstCustomers();
+    List<String> findGstCustomerIdsWithoutIgst();
+    List<String> findGstCustomerIdsWithIgst();
 }

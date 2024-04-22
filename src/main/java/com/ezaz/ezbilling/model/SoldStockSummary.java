@@ -15,7 +15,7 @@ public class SoldStockSummary {
     private String hsn_code;
     private int product_gst;
     private int totalQty;
-    private Double taxAmount;
+    private double taxAmount;
     private double totalAmount;
     private double sgst;
     private double cgst;

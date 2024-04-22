@@ -4,6 +4,7 @@ import com.ezaz.ezbilling.Bo.EzbillingBo;
 import com.ezaz.ezbilling.model.*;
 import com.ezaz.ezbilling.repository.BillingRepositry;
 import com.ezaz.ezbilling.repository.CompanyRepository;
+import com.ezaz.ezbilling.repository.StockItemDetails;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -162,4 +163,38 @@ public class ezbillingController {
 
     }
 
+    @CrossOrigin(origins = "http://localhost:8081/")
+    @RequestMapping(value="/getstockdetailsbyid/{id}", method = RequestMethod.GET)
+    public StockDetails getStockDetailsbyId (@PathVariable String id) {
+        return ezbillingBo.getStockItemDetails(id);
+
+    }
+
+    @CrossOrigin(origins = "http://localhost:8081/")
+    @PostMapping("/savestockdetails")
+    public String saveStockDetails(@RequestBody StockDetails stockDetails){
+        ezbillingBo.saveStockDetails(stockDetails);
+        return "saved stock details";
+    }
+
+    @CrossOrigin(origins = "http://localhost:8081/")
+    @RequestMapping(value="/copyproductstostock/{dgst}", method = RequestMethod.GET)
+    public String copyProductsToStock (@PathVariable String dgst) {
+        ezbillingBo.copyProductToStock(dgst);
+        return "copy done";
+
+    }
+    @CrossOrigin(origins = "http://localhost:8081/")
+    @RequestMapping(value="/getstockbypcomanddgst/{dgst}", method = RequestMethod.GET)
+    public List<StockDetails> getStockByPcomAndDgst (@PathVariable String dgst) {
+         return ezbillingBo.getStockDetailsByDgst(dgst);
+
+    }
+
+    @CrossOrigin(origins = "http://localhost:8081/")
+    @RequestMapping(value="/getsalesdetails", method = RequestMethod.GET)
+    public List<CompanyBillingSummary> getSalesDetails (@RequestParam("startDate") String startDate, @RequestParam("endDate") String endDate) throws ParseException {
+        return ezbillingBo.getSalesDetails(startDate,endDate);
+
+    }
 }

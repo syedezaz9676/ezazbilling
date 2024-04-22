@@ -19,6 +19,7 @@ import org.springframework.data.mongodb.core.index.CompoundIndexes;
 @Document(collection = "customers")
 public class Customer {
     @Id
+    private String id;
     private String cno; // Use cno as the primary identifier instead of _id
 
     private String cname;

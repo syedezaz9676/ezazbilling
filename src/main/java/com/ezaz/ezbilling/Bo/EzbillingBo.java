@@ -1,9 +1,11 @@
 package com.ezaz.ezbilling.Bo;
 
 import com.ezaz.ezbilling.model.*;
+import com.ezaz.ezbilling.repository.StockItemDetails;
 
 import java.text.ParseException;
 import java.time.LocalDate;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -49,6 +51,12 @@ public interface EzbillingBo {
 
     public List<SoldStockSummary> getGstDetailsForHsnCode(String startDate, String endDate);
 
+    public StockDetails getStockItemDetails(String productId);
+
+    public void saveStockDetails(StockDetails stockDetails);
+    public void copyProductToStock(String dgst);
+    public List<StockDetails> getStockDetailsByDgst(String dgst);
+    public List<CompanyBillingSummary> getSalesDetails(String startDate,String endDate);
     }
 
 

@@ -15,6 +15,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class CustomerRepositoryImpl implements CustomerRepositoryCustom {
     @Autowired
@@ -48,6 +49,17 @@ public class CustomerRepositoryImpl implements CustomerRepositoryCustom {
         return mongoTemplate.find(query, CustomerDetailswithGstNo.class, "customers");
     }
 
-
+    public List<String> findGstCustomerIdsWithoutIgst() {
+        Query query = new Query();
+        query.addCriteria(Criteria.where("ctno").ne("not available").and("isigst").is("No"));
+        List<Customer> customers = mongoTemplate.find(query, Customer.class);
+        return customers.stream().map(Customer::getId).collect(Collectors.toList());
+    }
+    public List<String> findGstCustomerIdsWithIgst() {
+        Query query = new Query();
+        query.addCriteria(Criteria.where("ctno").ne("not available").and("isigst").is("Yes"));
+        List<Customer> customers = mongoTemplate.find(query, Customer.class);
+        return customers.stream().map(Customer::getId).collect(Collectors.toList());
+    }
 
 }

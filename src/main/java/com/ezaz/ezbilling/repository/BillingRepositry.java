@@ -1,9 +1,6 @@
 package com.ezaz.ezbilling.repository;
 
-import com.ezaz.ezbilling.model.BillAggregationResult;
-import com.ezaz.ezbilling.model.BillDetails;
-import com.ezaz.ezbilling.model.BillingDetails;
-import com.ezaz.ezbilling.model.SoldStockSummary;
+import com.ezaz.ezbilling.model.*;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -26,5 +23,7 @@ public interface BillingRepositry   {
    List<SoldStockSummary> getSoldStockSummary(String startDate, String endDate);
 
    List<SoldStockSummary> getSoldStockSummaryForHsncode(String startDate, String endDate);
+
+    public List<CompanyBillingSummary> getCompanyBillingSummary(String startDate, String endDate);
 
 }
