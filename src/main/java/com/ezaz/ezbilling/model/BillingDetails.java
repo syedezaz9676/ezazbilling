@@ -22,7 +22,7 @@ public class BillingDetails {
     private String product_name;
     private Integer product_gst;
     private Integer qty;
-    private Float amount;
+    private Double amount;
     private String billing_date;
     private String free;
     private String hsn_code;
@@ -30,11 +30,13 @@ public class BillingDetails {
     private Integer mrp;
     private String product_company;
     private Integer disc;
-    private Float amount_after_disc;
+    private Double amount_after_disc;
     private String dgst;
-    private Float gross_amount;
-    private Float rate;
-    private Float gstamount;
+    private Double gross_amount;
+    private Double rate;
+    private Double gstamount;
+    private Integer cess;
+    private Double cessAmount;
     private Double total_tax;
     private Double total_gross;
     private Double total_amount;

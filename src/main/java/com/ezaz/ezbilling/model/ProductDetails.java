@@ -26,6 +26,7 @@ public class ProductDetails {
     private Integer no_of_unites;
     private String  is_sp;
     private String rel_prod;
+    private Integer cess;
     private String dgst;
 
 }

@@ -53,10 +53,13 @@ public interface EzbillingBo {
 
     public StockDetails getStockItemDetails(String productId);
 
+    public User getUser(String userName);
+    public List<User> getUsers();
     public void saveStockDetails(StockDetails stockDetails);
     public void copyProductToStock(String dgst);
     public List<StockDetails> getStockDetailsByDgst(String dgst);
     public List<CompanyBillingSummary> getSalesDetails(String startDate,String endDate);
+    public void saveUser(User user);
     }
 
 

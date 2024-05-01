@@ -7,8 +7,8 @@ import org.springframework.stereotype.Service;
 public class PercentageUtils {
 
 
-    public float getPercentageAmount(float amount,float per){
-        float percentageAmount = (amount*(per/100.0f));
+    public Double getPercentageAmount(Double amount,float per){
+        Double percentageAmount = (amount*(per/100));
         return percentageAmount;
     }
 }

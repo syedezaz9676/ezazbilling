@@ -4,6 +4,11 @@ import com.ezaz.ezbilling.Bo.EzbillingBo;
 import com.ezaz.ezbilling.Util.PercentageUtils;
 import com.ezaz.ezbilling.model.*;
 import com.ezaz.ezbilling.repository.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
 
 import java.text.ParseException;
@@ -18,6 +23,9 @@ import java.util.stream.Stream;
 
 @Service
 public class EzbillingBoImpl implements EzbillingBo {
+
+    @Autowired
+    private MongoTemplate mongoTemplate;
 
     private final CustomerRepository customerRepository;
     private final GstCodeDetailsRepo gstCodeDetailsRepo;
@@ -190,16 +198,33 @@ public class EzbillingBoImpl implements EzbillingBo {
             ProductDetails productDetails = productRepository.findById(billingDetails.getProduct_name()).orElse(null);
             Customer customer = customerRepository.findById(billingDetails.getCno()).orElse(null);
             billingDetails.setProduct_name(productDetails.getPname());
-            Float totalamountafterdiscount= billingDetails.getAmount()-percentageUtils.getPercentageAmount(billingDetails.getAmount(),billingDetails.getDisc());
-            Float gross_amount=totalamountafterdiscount - percentageUtils.getPercentageAmount(totalamountafterdiscount,billingDetails.getProduct_gst());
-            Float gst_amount =billingDetails.getAmount()-gross_amount;
-            billingDetails.setGross_amount(gross_amount*billingDetails.getQty());
+            billingDetails.setCess(productDetails.getCess());
+            System.out.println("cess"+productDetails.getCess());
+            Double cessAmount= percentageUtils.getPercentageAmount(billingDetails.getAmount(),productDetails.getCess());
+            Double gst_amount =percentageUtils.getPercentageAmount(billingDetails.getAmount(),productDetails.getVatp());
+            Double actualCostBeforeGstAndDiscount = billingDetails.getAmount()-(cessAmount+gst_amount);
+            Double actualAmountAfterDisc= actualCostBeforeGstAndDiscount - percentageUtils.getPercentageAmount(actualCostBeforeGstAndDiscount,billingDetails.getDisc());
+            Double cessAmountAfterDisc= percentageUtils.getPercentageAmount(actualAmountAfterDisc,productDetails.getCess())*billingDetails.getQty();
+            Double gstAmountAfterDisc=percentageUtils.getPercentageAmount(actualAmountAfterDisc,productDetails.getVatp())*billingDetails.getQty();
+            Double totalGrossAmount = actualAmountAfterDisc*billingDetails.getQty();
+            billingDetails.setCessAmount(cessAmount*billingDetails.getQty());
+            billingDetails.setGstamount(gst_amount*billingDetails.getQty());
+            billingDetails.setGross_amount(actualCostBeforeGstAndDiscount*billingDetails.getQty());
+
+            Double totalamountafterdiscount= billingDetails.getAmount()-percentageUtils.getPercentageAmount(billingDetails.getAmount(),billingDetails.getDisc())-cessAmount;
+            Double gross_amount=totalamountafterdiscount - percentageUtils.getPercentageAmount(totalamountafterdiscount,billingDetails.getProduct_gst());
+            billingDetails.setTotal_amount(cessAmountAfterDisc+gstAmountAfterDisc+actualCostBeforeGstAndDiscount);
+//            Float gst_amount =billingDetails.getAmount()-gross_amount;
+
+//            billingDetails.setGross_amount(gross_amount*billingDetails.getQty());
             billingDetails.setAmount(billingDetails.getAmount_after_disc());
-            Float rate = billingDetails.getAmount()/billingDetails.getQty();
+
+
+            Double rate = billingDetails.getAmount()/billingDetails.getQty();
             System.out.println("rate "+rate);
             billingDetails.setRate(rate);
             System.out.println("billingDetails.getGross_amount() "+gross_amount);
-            billingDetails.setGstamount(gst_amount);
+//            billingDetails.setGstamount(gst_amount);
             System.out.println("date "+billingDetails.getBilling_date());
         }
         return savedBillDetails;
@@ -404,6 +429,48 @@ public class EzbillingBoImpl implements EzbillingBo {
 
     public List<CompanyBillingSummary> getSalesDetails(String startDate,String endDate){
         return billingRepositry.getCompanyBillingSummary(startDate,endDate);
+    }
+
+    public void saveUser(User user) {
+        User user1 = usersRepository.findByUsername(user.getUsername());
+        if (user1 != null) {
+            user1.setUsername(user.getUsername());
+            user1.setPassword(user.getPassword());
+            user1.setRole(user.getRole());
+            user1.setAddress(user.getAddress());
+            user1.setGstNo(user.getGstNo());
+            user1.setFirmName(user.getFirmName());
+            user1.setContact(user.getContact());
+            user1.setPrefix(user.getPrefix());
+            user1.setState(user.getState());
+            // Get the collection using mongoTemplate
+            String collectionName = "Users"; // adjust the collection name as needed
+            mongoTemplate.updateFirst(
+                    Query.query(Criteria.where("username").is(user1.getUsername())),
+                    new Update()
+                            .set("username", user1.getUsername())
+                            .set("password", user1.getPassword())
+                            .set("role", user1.getRole())
+                            .set("prefix", user1.getPrefix())
+                            .set("address", user1.getAddress())
+                            .set("firmName", user1.getFirmName())
+                            .set("gstNo", user1.getGstNo())
+                            .set("contact", user1.getContact())
+                            .set("state", user1.getState()),
+                    collectionName);
+
+
+        }else {
+            usersRepository.save(user);
+        }
+    }
+
+    public List<User> getUsers(){
+        return usersRepository.findAll();
+    }
+
+    public User getUser(String userName){
+        return usersRepository.findByUsername(userName);
     }
 
 }

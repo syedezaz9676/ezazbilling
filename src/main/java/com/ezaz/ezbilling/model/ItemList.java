@@ -11,6 +11,6 @@ import lombok.*;
 public class ItemList {
     private Integer noofunites;
     private String pname;
-    private Float rate;
+    private Double rate;
     private Integer disc;
 }

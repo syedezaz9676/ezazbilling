@@ -20,7 +20,7 @@ public class User {
     private List<String> role;
     private String prefix;
     private String firmName;
-    private String Address;
+    private String address;
     private String gstNo;
     private String contact;
     private String state;

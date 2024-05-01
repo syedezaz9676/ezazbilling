@@ -197,4 +197,23 @@ public class ezbillingController {
         return ezbillingBo.getSalesDetails(startDate,endDate);
 
     }
+
+    @CrossOrigin(origins = "http://localhost:8081/")
+    @PostMapping("/saveuser")
+    public String saveUser(@RequestBody User user){
+        ezbillingBo.saveUser(user);
+        return "saved stock details";
+    }
+    @CrossOrigin(origins = "http://localhost:8081/")
+    @RequestMapping(value="/getusers", method = RequestMethod.GET)
+    public List<User> getUsers () throws ParseException {
+        return ezbillingBo.getUsers();
+
+    }
+    @CrossOrigin(origins = "http://localhost:8081/")
+    @RequestMapping(value="/getuser/{userName}", method = RequestMethod.GET)
+    public User getUser (@PathVariable String userName){
+        return ezbillingBo.getUser(userName);
+
+    }
 }
