@@ -3,6 +3,7 @@ package com.ezaz.ezbilling.repository;
 import com.ezaz.ezbilling.model.BillAggregationResult;
 import com.ezaz.ezbilling.model.BillNo;
 import com.ezaz.ezbilling.model.BillingDetails;
+import com.ezaz.ezbilling.model.ProductDetails;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 
@@ -22,4 +23,6 @@ public interface BillItemsRepository extends MongoRepository<BillingDetails, Str
     @Query(value = "{'bno': ?0}")
     List<BillAggregationResult> sumAmountByBnoGroupByProductGstAndBillingDate(String bno);
 
+
+    List<BillingDetails> findByBnoStartingWith(String prefix);
 }

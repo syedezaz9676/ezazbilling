@@ -20,7 +20,7 @@ import org.springframework.data.mongodb.core.index.CompoundIndexes;
 public class Customer {
     @Id
     private String id;
-    private String cno; // Use cno as the primary identifier instead of _id
+    private int cno; // Use cno as the primary identifier instead of _id
 
     private String cname;
     private String ctno;

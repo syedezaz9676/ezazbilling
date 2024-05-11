@@ -39,7 +39,6 @@ public class ezbillingController {
     }
     @PostMapping("/savecustomerdetails")
     public ResponseEntity<?> saveCustomer(@RequestBody Customer customer){
-        System.out.println("customer"+customer.getCname());
         ezbillingBo.saveCustomerToDB(customer);
         String success= "sucess";
         return ResponseEntity.ok(success);
@@ -121,7 +120,6 @@ public class ezbillingController {
     @CrossOrigin(origins = "http://localhost:8081/")
     @PostMapping("/savebillingdetails")
     public ResponseEntity<?> savebillingdetails(@RequestBody List<BillingDetails> billDetails) throws ParseException {
-        System.out.println(billDetails);
         String Invoice= ezbillingBo.saveBillItems(billDetails) ;
         return ResponseEntity.ok(Invoice);
     }
@@ -129,7 +127,6 @@ public class ezbillingController {
     @CrossOrigin(origins = "http://localhost:8081/")
     @RequestMapping(value="/getbillDetailsbyinvoiceno/{invoiceNo}", method = RequestMethod.GET)
     public ResponseEntity<?> getbillDetailsbyinvoiceno (@PathVariable String invoiceNo){
-        System.out.println(invoiceNo);
         List<BillingDetails> savedBillDetails= ezbillingBo.getSavedBillDetailsByinvoiceNo(invoiceNo);
         return ResponseEntity.ok(savedBillDetails);
     }
@@ -137,7 +134,6 @@ public class ezbillingController {
     @CrossOrigin(origins = "http://localhost:8081/")
     @RequestMapping(value="/getinvoicebyinvoiceno/{invoiceNo}", method = RequestMethod.GET)
     public ResponseEntity<?> getinvoiceDetailsbyinvoiceno (@PathVariable String invoiceNo){
-        System.out.println(invoiceNo);
         BillDetails savedBillDetails= ezbillingBo.getBillDetailsByInvoiceNo(invoiceNo);
         return ResponseEntity.ok(savedBillDetails);
     }
@@ -145,7 +141,6 @@ public class ezbillingController {
     @CrossOrigin(origins = "http://localhost:8081/")
     @PostMapping("/updatebillingdetails")
     public ResponseEntity<?> updatebillingdetails(@RequestBody List<BillingDetails> billDetails){
-        System.out.println(billDetails);
         String Invoice= ezbillingBo.updateBillItems(billDetails); ;
         return ResponseEntity.ok(Invoice);
     }
@@ -214,6 +209,28 @@ public class ezbillingController {
     @RequestMapping(value="/getuser/{userName}", method = RequestMethod.GET)
     public User getUser (@PathVariable String userName){
         return ezbillingBo.getUser(userName);
+
+    }
+    @CrossOrigin(origins = "http://localhost:8081/")
+    @RequestMapping(value="/setcnoascid", method = RequestMethod.GET)
+    public String setCnoAsCid (){
+       ezbillingBo.getCnoAsCid();
+       return "success";
+
+    }
+
+    @CrossOrigin(origins = "http://localhost:8081/")
+    @RequestMapping(value="/setpid", method = RequestMethod.GET)
+    public String setPid (){
+        ezbillingBo.setPid();
+        return "success";
+
+    }
+    @CrossOrigin(origins = "http://localhost:8081/")
+    @RequestMapping(value="/correctdate", method = RequestMethod.GET)
+    public String correctDate (){
+        ezbillingBo.changeDateFormat();
+        return "success";
 
     }
 }

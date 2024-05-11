@@ -60,6 +60,9 @@ public interface EzbillingBo {
     public List<StockDetails> getStockDetailsByDgst(String dgst);
     public List<CompanyBillingSummary> getSalesDetails(String startDate,String endDate);
     public void saveUser(User user);
+    public void getCnoAsCid();
+    public void setPid();
+    public void changeDateFormat();
     }
 
 

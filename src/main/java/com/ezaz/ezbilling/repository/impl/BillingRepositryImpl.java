@@ -1,8 +1,8 @@
 package com.ezaz.ezbilling.repository.impl;
 
 import com.ezaz.ezbilling.model.*;
+import com.ezaz.ezbilling.repository.BillItemsRepository;
 import com.ezaz.ezbilling.repository.BillingRepositry;
-import com.ezaz.ezbilling.repository.CustomerRepository;
 import com.ezaz.ezbilling.repository.CustomerRepositoryCustom;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
@@ -24,9 +24,11 @@ public class BillingRepositryImpl  implements BillingRepositry {
     private MongoTemplate mongoTemplate;
 
     private final CustomerRepositoryCustom customerRepository;
+    private final BillItemsRepository billItemsRepository;
 
-    public BillingRepositryImpl(CustomerRepositoryCustom customerRepository) {
+    public BillingRepositryImpl(CustomerRepositoryCustom customerRepository, BillItemsRepository billItemsRepository) {
         this.customerRepository = customerRepository;
+        this.billItemsRepository = billItemsRepository;
     }
 
     @Override
@@ -137,6 +139,39 @@ public class BillingRepositryImpl  implements BillingRepositry {
 
     }
 
+    public List<BillingDetails> getBillingDetailsByPname(String pname){
+        List<BillingDetails>  billingDetailsList = new ArrayList<>();
+
+        AggregationOperation match = Aggregation.match(org.springframework.data.mongodb.core.query.Criteria.where("product_name").is(pname));
+
+
+
+
+
+        Aggregation aggregation = Aggregation.newAggregation(match);
+
+        AggregationResults<BillingDetails> result = mongoTemplate.aggregate(aggregation, "soldstock", BillingDetails.class);
+        billingDetailsList = result.getMappedResults();
+
+        return billingDetailsList;
+    }
+
+    public int findRecordWithHighestDecimal(String prefix) {
+        System.out.println("prefix"+prefix);
+        List<BillingDetails> records = billItemsRepository.findByBnoStartingWith(prefix);
+
+
+        int maxDecimal = 0;
+
+        for (BillingDetails record : records) {
+            int decimalPart = Integer.parseInt(record.getBno().substring(4)); // Extract decimal part after "RE"
+            if (decimalPart > maxDecimal) {
+                maxDecimal = decimalPart;
+            }
+        }
+
+        return maxDecimal;
+    }
 
 }
 

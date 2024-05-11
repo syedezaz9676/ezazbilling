@@ -11,6 +11,7 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
 
+import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
@@ -29,6 +30,7 @@ public class EzbillingBoImpl implements EzbillingBo {
 
     private final CustomerRepository customerRepository;
     private final GstCodeDetailsRepo gstCodeDetailsRepo;
+    private final ChangeDateFormatRepo changeDateFormatRepo;
 
 
     private final CompanyRepository companyRepository;
@@ -53,9 +55,10 @@ public class EzbillingBoImpl implements EzbillingBo {
 
     private final StockRepository stockRepository;
 
-    public EzbillingBoImpl(CustomerRepository customerRepository, GstCodeDetailsRepo gstCodeDetailsRepo, CompanyRepository companyRepository, ProductRepository productRepository, ProductDetailsRepository productDetailsRepository, CompanyDetailsRepository companyDetailsRepository, CustomerRepositoryCustom customerRepositoryCustom, UsersRepository usersRepository, BillingRepositry billingRepositry, BillItemsRepository billItemsRepository, PercentageUtils percentageUtils, StockItemDetails stockItemDetails, StockRepository stockRepository) {
+    public EzbillingBoImpl(CustomerRepository customerRepository, GstCodeDetailsRepo gstCodeDetailsRepo, ChangeDateFormatRepo changeDateFormatRepo, CompanyRepository companyRepository, ProductRepository productRepository, ProductDetailsRepository productDetailsRepository, CompanyDetailsRepository companyDetailsRepository, CustomerRepositoryCustom customerRepositoryCustom, UsersRepository usersRepository, BillingRepositry billingRepositry, BillItemsRepository billItemsRepository, PercentageUtils percentageUtils, StockItemDetails stockItemDetails, StockRepository stockRepository) {
         this.customerRepository = customerRepository;
         this.gstCodeDetailsRepo = gstCodeDetailsRepo;
+        this.changeDateFormatRepo = changeDateFormatRepo;
         this.companyRepository = companyRepository;
         this.productRepository = productRepository;
         this.productDetailsRepository = productDetailsRepository;
@@ -146,22 +149,22 @@ public class EzbillingBoImpl implements EzbillingBo {
           User user= usersRepository.findById(firstBillItem.getDgst()).orElse(null);
 
           BillingDetails billingDetailsforMaxBillno = billingRepositry.getMaxBillNo(user.getId());
-
+          int maxBillNoDeciamal=billingRepositry.findRecordWithHighestDecimal(user.getPrefix());
 
         LocalDate currentDate = LocalDate.now();
 
         // Define the desired date format (YYMM)
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyMM");
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yy");
 
         // Format the current date using the formatter
         String formattedDate = currentDate.format(formatter);
 
           String newInvoiceNo=null;
 
-          if(billingDetailsforMaxBillno==null){
-              newInvoiceNo = user.getPrefix().toUpperCase(Locale.ROOT)+formattedDate+"01";
+          if(maxBillNoDeciamal==0){
+              newInvoiceNo = user.getPrefix()+formattedDate+"001";
           }else {
-              newInvoiceNo = Long.toString(Math.incrementExact(Long.parseLong(billingDetailsforMaxBillno.getBno(), 36)), 36);
+              newInvoiceNo = user.getPrefix()+formattedDate+(maxBillNoDeciamal+1);
           }
         for (BillingDetails billingDetails:billingDetailsList
              ) {
@@ -175,7 +178,6 @@ public class EzbillingBoImpl implements EzbillingBo {
                billingDetails.setBilling_date(billingDetails.getBilling_date().substring(0,10));
                billingDetails.setBno(newInvoiceNo);
                billingDetails.setAmount_after_disc((billingDetails.getAmount()*billingDetails.getQty())-percentageUtils.getPercentageAmount(billingDetails.getAmount()*billingDetails.getQty(),billingDetails.getDisc()));
-               System.out.println(percentageUtils.getPercentageAmount(billingDetails.getAmount()*billingDetails.getQty(),billingDetails.getProduct_gst()));
                billItemsRepository.save(billingDetails);
         }
 
@@ -199,7 +201,6 @@ public class EzbillingBoImpl implements EzbillingBo {
             Customer customer = customerRepository.findById(billingDetails.getCno()).orElse(null);
             billingDetails.setProduct_name(productDetails.getPname());
             billingDetails.setCess(productDetails.getCess());
-            System.out.println("cess"+productDetails.getCess());
             Double cessAmount= percentageUtils.getPercentageAmount(billingDetails.getAmount(),productDetails.getCess());
             Double gst_amount =percentageUtils.getPercentageAmount(billingDetails.getAmount(),productDetails.getVatp());
             Double actualCostBeforeGstAndDiscount = billingDetails.getAmount()-(cessAmount+gst_amount);
@@ -210,22 +211,16 @@ public class EzbillingBoImpl implements EzbillingBo {
             billingDetails.setCessAmount(cessAmount*billingDetails.getQty());
             billingDetails.setGstamount(gst_amount*billingDetails.getQty());
             billingDetails.setGross_amount(actualCostBeforeGstAndDiscount*billingDetails.getQty());
-
+            billingDetails.setRate(billingDetails.getAmount());
             Double totalamountafterdiscount= billingDetails.getAmount()-percentageUtils.getPercentageAmount(billingDetails.getAmount(),billingDetails.getDisc())-cessAmount;
             Double gross_amount=totalamountafterdiscount - percentageUtils.getPercentageAmount(totalamountafterdiscount,billingDetails.getProduct_gst());
             billingDetails.setTotal_amount(cessAmountAfterDisc+gstAmountAfterDisc+actualCostBeforeGstAndDiscount);
 //            Float gst_amount =billingDetails.getAmount()-gross_amount;
 
 //            billingDetails.setGross_amount(gross_amount*billingDetails.getQty());
-            billingDetails.setAmount(billingDetails.getAmount_after_disc());
+            billingDetails.setAmount(billingDetails.getAmount());
 
-
-            Double rate = billingDetails.getAmount()/billingDetails.getQty();
-            System.out.println("rate "+rate);
-            billingDetails.setRate(rate);
-            System.out.println("billingDetails.getGross_amount() "+gross_amount);
-//            billingDetails.setGstamount(gst_amount);
-            System.out.println("date "+billingDetails.getBilling_date());
+            billingDetails.setAmount_after_disc(billingDetails.getAmount()*billingDetails.getQty());
         }
         return savedBillDetails;
     }
@@ -273,7 +268,6 @@ public class EzbillingBoImpl implements EzbillingBo {
 
                 if (result.isPresent()) {
                     BillingDetails foundBillingDetails = result.get();
-                    System.out.println("Found: " + foundBillingDetails);
                     if(foundBillingDetails.getQty()>billingDetails.getQty()){
                         StockDetails stockDetails = getStockItemDetails(billingDetails.getProduct_name());
 
@@ -319,16 +313,15 @@ public class EzbillingBoImpl implements EzbillingBo {
         List<CustomerDetailswithGstNo> customerDetailswithGstNos = customerRepositoryCustom.findGstCustomers();
 
         for (CustomerDetailswithGstNo customerDetailswithGstNo : customerDetailswithGstNos) {
-            System.out.println("customerDetailswithGstNo"+customerDetailswithGstNo.getId());
             GstReport gstReport = new GstReport();
             gstReport.setCustomerName(customerDetailswithGstNo.getCname());
             gstReport.setGstNo(customerDetailswithGstNo.getCtno());
 
             List<BillNo> billnos = billItemsRepository.findBnoByCnoAndBillingDateBetween(customerDetailswithGstNo.getId(), startDate, endDate);
-            Map<String, BillGstDetails> billGstDetailsMap = new HashMap<>();
 
+            Map<String, BillGstDetails> billGstDetailsMap = new HashMap<>();
+            System.out.println("billnos.size"+billnos.size());
             for (BillNo bno : billnos) {
-                System.out.println("billno"+ bno.getBno());
                 BillGstDetails billGstDetails = new BillGstDetails();
                 billGstDetails.setSumOfGsts(new ArrayList<>());
 
@@ -394,7 +387,6 @@ public class EzbillingBoImpl implements EzbillingBo {
     }
 
     public void saveStockDetails(StockDetails stockDetails){
-        System.out.println("stock"+stockDetails.toString());
         StockDetails stockDetail= new StockDetails();
         stockDetail.set_id(stockDetails.get_id());
         stockDetail.setPid(stockDetails.getPid());
@@ -471,6 +463,64 @@ public class EzbillingBoImpl implements EzbillingBo {
 
     public User getUser(String userName){
         return usersRepository.findByUsername(userName);
+    }
+
+    public void getCnoAsCid(){
+        List<Customer> customerList= customerRepository.findAll();
+        for (Customer customer:customerList
+             ) {
+            List<BillingDetails> billingDetailsList = billItemsRepository.findByCno(customer.getCno());
+            for (BillingDetails billingDetails:billingDetailsList
+                 ) {
+                billingDetails.setCno(customer.getId());
+                billItemsRepository.save(billingDetails);
+            }
+
+        }
+    }
+
+    public void setPid(){
+        List<ProductDetails> productDetails= productRepository.findAll();
+        for (ProductDetails productDetails1:productDetails
+             ) {
+            List<BillingDetails> billingDetailsList = billingRepositry.getBillingDetailsByPname(productDetails1.getPname());
+
+            for (BillingDetails billingDetails:billingDetailsList
+                 ) {
+                billingDetails.setProduct_name(productDetails1.getId());
+                billItemsRepository.save(billingDetails);
+            }
+        }
+    }
+    public void changeDateFormat(){
+        List<BillingItemDetails> billingDetailsList = changeDateFormatRepo.findAll();
+        for (BillingItemDetails billingDetails : billingDetailsList
+        ){
+        String convertedDate = convertToISO8601(billingDetails.getBilling_date());
+            System.out.println("convertedDate"+convertedDate);
+        if(convertedDate!=null)
+        billingDetails.setBilling_date(convertedDate);
+
+            changeDateFormatRepo.save(billingDetails);
+
+
+        }
+    }
+
+    public static String convertToISO8601(String dateString) {
+        System.out.println("dataString "+dateString);
+        DateFormat originalFormat = new SimpleDateFormat("EEE MMM dd HH:mm:ss zzz yyyy");
+        originalFormat.setTimeZone(TimeZone.getTimeZone("IST")); // Setting input timezone
+        DateFormat targetFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+        targetFormat.setTimeZone(TimeZone.getTimeZone("UTC")); // Setting output timezone
+
+        try {
+            Date date = originalFormat.parse(dateString);
+            return targetFormat.format(date);
+        } catch (ParseException e) {
+            e.printStackTrace();
+            return null; // Handle parse exception
+        }
     }
 
 }

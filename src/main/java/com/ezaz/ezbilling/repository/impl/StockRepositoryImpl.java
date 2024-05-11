@@ -1,8 +1,21 @@
 package com.ezaz.ezbilling.repository.impl;
 
+import com.ezaz.ezbilling.model.BillingDetails;
 import com.ezaz.ezbilling.model.StockDetails;
 import com.ezaz.ezbilling.repository.StockRepository;
 import org.bson.Document;
+import com.mongodb.client.AggregateIterable;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
+
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
+import java.util.TimeZone;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -38,4 +51,8 @@ public class StockRepositoryImpl implements StockRepository {
                         .set("in_stock_units", stockDetails.getIn_stock_units()),
                 collectionName);
     }
+
+
+
+
 }

@@ -1,5 +1,4 @@
 package com.ezaz.ezbilling.model;
-import com.ezaz.ezbilling.configuration.LocalDateDeserializer;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import lombok.AllArgsConstructor;
@@ -17,7 +16,7 @@ import java.time.LocalDate;
 @AllArgsConstructor
 @NoArgsConstructor
 @Document(collection = "soldstock")
-public class BillingDetails {
+public class BillingItemDetails {
     @Id
     private String id;
     private String cno;
@@ -44,12 +43,4 @@ public class BillingDetails {
     private Double total_gross;
     private Double total_amount;
 
-
-    public String getBilling_date() {
-        if (billing_date != null) {
-            return billing_date.substring(0,10);
-        }
-        return null;
-    }
 }
-

@@ -25,5 +25,8 @@ public interface BillingRepositry   {
    List<SoldStockSummary> getSoldStockSummaryForHsncode(String startDate, String endDate);
 
     public List<CompanyBillingSummary> getCompanyBillingSummary(String startDate, String endDate);
+    public List<BillingDetails> getBillingDetailsByPname(String pname);
+
+    public int findRecordWithHighestDecimal(String prefix) ;
 
 }
