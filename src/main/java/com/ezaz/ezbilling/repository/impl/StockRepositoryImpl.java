@@ -1,6 +1,7 @@
 package com.ezaz.ezbilling.repository.impl;
 
 import com.ezaz.ezbilling.model.BillingDetails;
+import com.ezaz.ezbilling.model.CompanyDetails;
 import com.ezaz.ezbilling.model.StockDetails;
 import com.ezaz.ezbilling.repository.StockRepository;
 import org.bson.Document;
@@ -50,6 +51,16 @@ public class StockRepositoryImpl implements StockRepository {
                 new Update()
                         .set("in_stock_units", stockDetails.getIn_stock_units()),
                 collectionName);
+    }
+
+    public void addDgst(String dgst) {
+        Query query = new Query();
+        query.addCriteria(Criteria.where("dgst").exists(false));
+
+        Update update = new Update();
+        update.set("dgst", dgst);
+
+        mongoTemplate.updateMulti(query, update, StockDetails.class);
     }
 
 

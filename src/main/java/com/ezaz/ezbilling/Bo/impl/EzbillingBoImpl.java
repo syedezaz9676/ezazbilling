@@ -31,6 +31,7 @@ public class EzbillingBoImpl implements EzbillingBo {
     private final CustomerRepository customerRepository;
     private final GstCodeDetailsRepo gstCodeDetailsRepo;
     private final ChangeDateFormatRepo changeDateFormatRepo;
+    private final BillAmountRepository billAmountRepository;
 
 
     private final CompanyRepository companyRepository;
@@ -55,10 +56,11 @@ public class EzbillingBoImpl implements EzbillingBo {
 
     private final StockRepository stockRepository;
 
-    public EzbillingBoImpl(CustomerRepository customerRepository, GstCodeDetailsRepo gstCodeDetailsRepo, ChangeDateFormatRepo changeDateFormatRepo, CompanyRepository companyRepository, ProductRepository productRepository, ProductDetailsRepository productDetailsRepository, CompanyDetailsRepository companyDetailsRepository, CustomerRepositoryCustom customerRepositoryCustom, UsersRepository usersRepository, BillingRepositry billingRepositry, BillItemsRepository billItemsRepository, PercentageUtils percentageUtils, StockItemDetails stockItemDetails, StockRepository stockRepository) {
+    public EzbillingBoImpl(CustomerRepository customerRepository, GstCodeDetailsRepo gstCodeDetailsRepo, ChangeDateFormatRepo changeDateFormatRepo, BillAmountRepository billAmountRepository, CompanyRepository companyRepository, ProductRepository productRepository, ProductDetailsRepository productDetailsRepository, CompanyDetailsRepository companyDetailsRepository, CustomerRepositoryCustom customerRepositoryCustom, UsersRepository usersRepository, BillingRepositry billingRepositry, BillItemsRepository billItemsRepository, PercentageUtils percentageUtils, StockItemDetails stockItemDetails, StockRepository stockRepository) {
         this.customerRepository = customerRepository;
         this.gstCodeDetailsRepo = gstCodeDetailsRepo;
         this.changeDateFormatRepo = changeDateFormatRepo;
+        this.billAmountRepository = billAmountRepository;
         this.companyRepository = companyRepository;
         this.productRepository = productRepository;
         this.productDetailsRepository = productDetailsRepository;
@@ -144,7 +146,13 @@ public class EzbillingBoImpl implements EzbillingBo {
 
     @Override
     public String saveBillItems(List<BillingDetails> billingDetailsList) throws ParseException {
+        Double totalBillAmount=0.0;
+
           BillingDetails firstBillItem = billingDetailsList.get(0);
+
+          BillAmountDetails billAmountDetails= new BillAmountDetails();
+          billAmountDetails.setCno(firstBillItem.getCno());
+          billAmountDetails.setDgst(firstBillItem.getDgst());
          final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
           User user= usersRepository.findById(firstBillItem.getDgst()).orElse(null);
 
@@ -166,8 +174,12 @@ public class EzbillingBoImpl implements EzbillingBo {
           }else {
               newInvoiceNo = user.getPrefix()+formattedDate+(maxBillNoDeciamal+1);
           }
+          billAmountDetails.setBno(newInvoiceNo);
+          billAmountDetails.setDate(firstBillItem.getBilling_date());
+
         for (BillingDetails billingDetails:billingDetailsList
              ) {
+
             StockDetails stockDetails = getStockItemDetails(billingDetails.getProduct_name());
 
             StockDetails newStockDetails = new StockDetails();
@@ -177,11 +189,13 @@ public class EzbillingBoImpl implements EzbillingBo {
 
                billingDetails.setBilling_date(billingDetails.getBilling_date().substring(0,10));
                billingDetails.setBno(newInvoiceNo);
-               billingDetails.setAmount_after_disc((billingDetails.getAmount()*billingDetails.getQty())-percentageUtils.getPercentageAmount(billingDetails.getAmount()*billingDetails.getQty(),billingDetails.getDisc()));
+               billingDetails.setAmount_after_disc((billingDetails.getAmount()*billingDetails.getQty()));
                billItemsRepository.save(billingDetails);
+               totalBillAmount = totalBillAmount+billingDetails.getAmount()*billingDetails.getQty();
         }
+            billAmountDetails.setAmount(totalBillAmount);
 
-
+            billAmountRepository.save(billAmountDetails);
 
 
         return newInvoiceNo;
@@ -218,7 +232,7 @@ public class EzbillingBoImpl implements EzbillingBo {
 //            Float gst_amount =billingDetails.getAmount()-gross_amount;
 
 //            billingDetails.setGross_amount(gross_amount*billingDetails.getQty());
-            billingDetails.setAmount(billingDetails.getAmount());
+            billingDetails.setAmount(billingDetails.getAmount()*billingDetails.getQty());
 
             billingDetails.setAmount_after_disc(billingDetails.getAmount()*billingDetails.getQty());
         }
@@ -238,7 +252,8 @@ public class EzbillingBoImpl implements EzbillingBo {
             ItemList itemList = new ItemList();
             itemList.setRate(billingDetails.getAmount());
             itemList.setNoofunites(billingDetails.getQty());
-            itemList.setPname(billingDetails.getProduct_name());
+            ProductDetails productDetails =productRepository.findById(billingDetails.getProduct_name()).orElse(null);
+            itemList.setPname(productDetails.getPname());
             itemList.setDisc(billingDetails.getDisc());
             itemLists.add(itemList);
         }
@@ -481,6 +496,15 @@ public class EzbillingBoImpl implements EzbillingBo {
 
     public void setPid(){
         List<ProductDetails> productDetails= productRepository.findAll();
+        List<BillAmountDetails> billAmountDetails = billAmountRepository.findAll();
+        for (BillAmountDetails amountDetails : billAmountDetails
+        ){
+        Customer customer = customerRepository.findByCno(amountDetails.getCno());
+        if(customer !=null) {
+            amountDetails.setCno(customer.getId());
+            billAmountRepository.save(amountDetails);
+        }
+        }
         for (ProductDetails productDetails1:productDetails
              ) {
             List<BillingDetails> billingDetailsList = billingRepositry.getBillingDetailsByPname(productDetails1.getPname());
@@ -522,5 +546,39 @@ public class EzbillingBoImpl implements EzbillingBo {
             return null; // Handle parse exception
         }
     }
+
+    public void addDgst(String dgst){
+        billingRepositry.addDgst(dgst);
+        companyDetailsRepository.addDgst(dgst);
+        customerRepository.addDgst(dgst);
+        productDetailsRepository.addDgst(dgst);
+        stockRepository.addDgst(dgst);
+    }
+   public void correctAmount(){
+        List<BillingDetails> billingDetailsList= billItemsRepository.findAll();
+       for (BillingDetails billingDetails:billingDetailsList
+            ) {
+           Double correctedAmount= billingDetails.getAmount()/billingDetails.getQty();
+           billingDetails.setAmount(correctedAmount);
+           billItemsRepository.save(billingDetails);
+
+       }
+   }
+
+   public List<BillAmountDetails> getBillsAmount(String dgst){
+       List<BillAmountDetails> billAmountDetails= billAmountRepository.findAllByDgst(dgst);
+       List<BillAmountDetails> billAmountDetailsWithCustomerNames= new ArrayList<>();
+       for (BillAmountDetails amountDetails :billAmountDetails
+            ) {
+           Customer customer = customerRepository.findById(amountDetails.getCno()).orElse(null);
+           System.out.println("amountDetails.getCno()"+amountDetails.getCno());
+           amountDetails.setCno(customer.getCname());
+           billAmountDetailsWithCustomerNames.add(amountDetails);
+       }
+       return billAmountDetailsWithCustomerNames;
+   }
+
+
+
 
 }

@@ -9,6 +9,7 @@ public interface CompanyDetailsRepository {
 
 
     public List<CompanyNames> getCompanyNames(String id);
+    public void addDgst(String dgst);
 
 
 }

@@ -12,4 +12,5 @@ import java.util.List;
 public interface CustomerRepository  extends MongoRepository<Customer, String> ,CustomerRepositoryCustom {
 
     List<Customer> findAllByDgst(String dgst);
+    Customer findByCno(String cno);
 }

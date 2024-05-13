@@ -7,4 +7,5 @@ import org.springframework.stereotype.Repository;
 public interface StockRepository {
     void updateStock(StockDetails stockDetails);
     void updateBillItemInStock(StockDetails stockDetails);
+    public void addDgst(String dgst);
 }

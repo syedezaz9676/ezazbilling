@@ -63,6 +63,9 @@ public interface EzbillingBo {
     public void getCnoAsCid();
     public void setPid();
     public void changeDateFormat();
+    public void addDgst(String dgst);
+    public void correctAmount();
+    public List<BillAmountDetails> getBillsAmount(String dgst);
     }
 
 

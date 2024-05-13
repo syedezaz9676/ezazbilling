@@ -233,4 +233,35 @@ public class ezbillingController {
         return "success";
 
     }
+
+    @CrossOrigin(origins = "http://localhost:8081/")
+    @RequestMapping(value="/adddgst/{dgst}", method = RequestMethod.GET)
+    public String addDgst (@PathVariable String dgst){
+        ezbillingBo.addDgst(dgst);
+        return "success";
+    }
+
+    @CrossOrigin(origins = "http://localhost:8081/")
+    @RequestMapping(value="/dosetup/{dgst}", method = RequestMethod.GET)
+    public String doSetup (@PathVariable String dgst){
+        setCnoAsCid();
+        setPid();
+        correctDate();
+        ezbillingBo.addDgst(dgst);
+        ezbillingBo.correctAmount();
+        copyProductsToStock(dgst);
+        return "success";
+    }
+    @CrossOrigin(origins = "http://localhost:8081/")
+    @RequestMapping(value="/correctamount", method = RequestMethod.GET)
+    public String correctamount (@PathVariable String dgst){
+        ezbillingBo.correctAmount();
+        return "success";
+    }
+
+    @CrossOrigin(origins = "http://localhost:8081/")
+    @RequestMapping(value="/getbillsamount/{dgst}", method = RequestMethod.GET)
+    public List<BillAmountDetails> getBillsAmount (@PathVariable String dgst){
+        return ezbillingBo.getBillsAmount(dgst);
+    }
 }

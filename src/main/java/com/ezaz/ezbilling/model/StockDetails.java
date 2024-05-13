@@ -14,6 +14,7 @@ import java.time.LocalDate;
 @Document(collection = "in_stock_itemss")
 public class StockDetails {
 
+    @Id
     private String _id;
     private String pid;
     private String pname;

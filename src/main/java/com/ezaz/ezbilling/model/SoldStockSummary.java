@@ -17,6 +17,7 @@ public class SoldStockSummary {
     private int totalQty;
     private double taxAmount;
     private double totalAmount;
+    private double taxableAmount;
     private double sgst;
     private double cgst;
     private double igst;

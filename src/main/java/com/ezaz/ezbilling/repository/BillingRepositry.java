@@ -28,5 +28,6 @@ public interface BillingRepositry   {
     public List<BillingDetails> getBillingDetailsByPname(String pname);
 
     public int findRecordWithHighestDecimal(String prefix) ;
+    public void addDgst(String dgst);
 
 }

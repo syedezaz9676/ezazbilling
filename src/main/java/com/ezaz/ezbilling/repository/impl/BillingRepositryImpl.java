@@ -10,7 +10,10 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.*;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Repository;
+import static org.springframework.data.mongodb.core.query.Query.query;
+import static org.springframework.data.mongodb.core.query.Update.update;
 
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -91,6 +94,7 @@ public class BillingRepositryImpl  implements BillingRepositry {
                 Aggregation.project("hsn_code", "totalAmount", "totalQty", "product_gst"), // Reproject fields
                 Aggregation.project()
                         .andExpression("totalAmount * product_gst / 100").as("taxAmount") // Calculate the tax amount
+                        .andExpression("totalAmount-(totalAmount * product_gst / 100)").as("taxableAmount")
                         .and("hsn_code").as("hsn_code")
                         .and("totalAmount").as("totalAmount")
                         .and("totalQty").as("totalQty")
@@ -114,6 +118,7 @@ public class BillingRepositryImpl  implements BillingRepositry {
                 Aggregation.project("hsn_code", "totalAmount", "totalQty", "product_gst"), // Reproject fields
                 Aggregation.project()
                         .andExpression("totalAmount * product_gst / 100").as("igst") // Calculate the tax amount
+                        .andExpression("totalAmount-(totalAmount * product_gst / 100)").as("taxableAmount")
                         .and("hsn_code").as("hsn_code")
                         .and("totalAmount").as("totalAmount")
                         .and("totalQty").as("totalQty")
@@ -172,6 +177,19 @@ public class BillingRepositryImpl  implements BillingRepositry {
 
         return maxDecimal;
     }
+
+
+    public void addDgst(String dgst) {
+        Query query = new Query();
+        query.addCriteria(Criteria.where("dgst").exists(false));
+
+        Update update = new Update();
+        update.set("dgst", dgst);
+        update.rename("Amount_after_disc", "amount_after_disc");
+
+        mongoTemplate.updateMulti(query, update, BillingDetails.class);
+    }
+
 
 }
 

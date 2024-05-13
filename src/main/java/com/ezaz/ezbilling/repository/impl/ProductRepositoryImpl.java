@@ -1,5 +1,6 @@
 package com.ezaz.ezbilling.repository.impl;
 
+import com.ezaz.ezbilling.model.CompanyDetails;
 import com.ezaz.ezbilling.model.ProductDetails;
 import com.ezaz.ezbilling.model.ProductNames;
 import com.ezaz.ezbilling.repository.ProductDetailsRepository;
@@ -10,6 +11,8 @@ import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.aggregation.AggregationOperation;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 
 import java.util.List;
 
@@ -45,5 +48,16 @@ public class ProductRepositoryImpl implements ProductDetailsRepository {
 
         AggregationResults<ProductDetails> results = mongoTemplate.aggregate(null, "product", ProductDetails.class);
         return results.getMappedResults();
+    }
+
+    public void addDgst(String dgst) {
+        Query query = new Query();
+        query.addCriteria(Criteria.where("dgst").exists(false));
+
+        Update update = new Update();
+        update.set("dgst", dgst);
+        update.set("cess", 0);
+
+        mongoTemplate.updateMulti(query, update, ProductDetails.class);
     }
 }

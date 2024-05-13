@@ -16,4 +16,7 @@ public interface CustomerRepositoryCustom {
     List<CustomerDetailswithGstNo> findGstCustomers();
     List<String> findGstCustomerIdsWithoutIgst();
     List<String> findGstCustomerIdsWithIgst();
+    void addDgst(String dgst);
+
+
 }
