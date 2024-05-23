@@ -3,7 +3,9 @@ package com.ezaz.ezbilling.Bo.impl;
 import com.ezaz.ezbilling.Bo.EzbillingBo;
 import com.ezaz.ezbilling.Util.PercentageUtils;
 import com.ezaz.ezbilling.model.*;
+import com.ezaz.ezbilling.model.mysql.*;
 import com.ezaz.ezbilling.repository.*;
+import com.ezaz.ezbilling.repository.mysql.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -55,8 +57,14 @@ public class EzbillingBoImpl implements EzbillingBo {
     private final StockItemDetails stockItemDetails;
 
     private final StockRepository stockRepository;
+    private final JpaCustomerRepo jpaCustomerRepo;
+    private final JpaProductRepo jpaProductRepo;
+    private final JpaSoldStockRepo jpaSoldStockRepo;
+    private final JpaCompanyRepo jpaCompanyRepo;
+    private final JpaBillsAmountRepo jpaBillsAmountRepo;
+    private final BalanceDetailsRepository balanceDetailsRepository;
 
-    public EzbillingBoImpl(CustomerRepository customerRepository, GstCodeDetailsRepo gstCodeDetailsRepo, ChangeDateFormatRepo changeDateFormatRepo, BillAmountRepository billAmountRepository, CompanyRepository companyRepository, ProductRepository productRepository, ProductDetailsRepository productDetailsRepository, CompanyDetailsRepository companyDetailsRepository, CustomerRepositoryCustom customerRepositoryCustom, UsersRepository usersRepository, BillingRepositry billingRepositry, BillItemsRepository billItemsRepository, PercentageUtils percentageUtils, StockItemDetails stockItemDetails, StockRepository stockRepository) {
+    public EzbillingBoImpl(CustomerRepository customerRepository, GstCodeDetailsRepo gstCodeDetailsRepo, ChangeDateFormatRepo changeDateFormatRepo, BillAmountRepository billAmountRepository, CompanyRepository companyRepository, ProductRepository productRepository, ProductDetailsRepository productDetailsRepository, CompanyDetailsRepository companyDetailsRepository, CustomerRepositoryCustom customerRepositoryCustom, UsersRepository usersRepository, BillingRepositry billingRepositry, BillItemsRepository billItemsRepository, PercentageUtils percentageUtils, StockItemDetails stockItemDetails, StockRepository stockRepository, JpaCustomerRepo jpaCustomerRepo, JpaProductRepo jpaProductRepo, JpaSoldStockRepo jpaSoldStockRepo, JpaCompanyRepo jpaCompanyRepo, JpaBillsAmountRepo jpaBillsAmountRepo, BalanceDetailsRepository balanceDetailsRepository) {
         this.customerRepository = customerRepository;
         this.gstCodeDetailsRepo = gstCodeDetailsRepo;
         this.changeDateFormatRepo = changeDateFormatRepo;
@@ -72,6 +80,12 @@ public class EzbillingBoImpl implements EzbillingBo {
         this.percentageUtils = percentageUtils;
         this.stockItemDetails = stockItemDetails;
         this.stockRepository = stockRepository;
+        this.jpaCustomerRepo = jpaCustomerRepo;
+        this.jpaProductRepo = jpaProductRepo;
+        this.jpaSoldStockRepo = jpaSoldStockRepo;
+        this.jpaCompanyRepo = jpaCompanyRepo;
+        this.jpaBillsAmountRepo = jpaBillsAmountRepo;
+        this.balanceDetailsRepository = balanceDetailsRepository;
     }
 
     @Override
@@ -86,7 +100,18 @@ public class EzbillingBoImpl implements EzbillingBo {
 
     @Override
     public void saveCustomerToDB(Customer customer) {
+
+
         customerRepository.save(customer);
+        Customer customer1 = customerRepository.findByCname(customer.getCname());
+        BalanceDetails balanceDetails = new BalanceDetails();
+        balanceDetails.setCreditBalance(0.0);
+        balanceDetails.setDebitBalance(0.0);
+        balanceDetails.setTotalBalance(0.0);
+        balanceDetails.setCname(customer.getCname());
+        balanceDetails.setCno(customer.getId());
+        balanceDetails.setDgst(customer1.getDgst());
+        balanceDetailsRepository.save(balanceDetails);
     }
 
     @Override
@@ -96,7 +121,20 @@ public class EzbillingBoImpl implements EzbillingBo {
 
     @Override
     public void saveProductDetails(ProductDetails productDetails) {
+
+
+
         productRepository.save(productDetails);
+        ProductDetails productDetails1 = productRepository.findByPname(productDetails.getPname());
+        StockDetails stockDetails = new StockDetails();
+        stockDetails.setPid(productDetails1.getId());
+        stockDetails.setPname(productDetails1.getPname());
+        stockDetails.setIn_stock_units(0.0);
+        stockDetails.setDgst(productDetails.getDgst());
+        stockDetails.setPcom(productDetails.getPcom());
+        stockItemDetails.save(stockDetails);
+
+
     }
 
     @Override
@@ -194,9 +232,15 @@ public class EzbillingBoImpl implements EzbillingBo {
                totalBillAmount = totalBillAmount+billingDetails.getAmount()*billingDetails.getQty();
         }
             billAmountDetails.setAmount(totalBillAmount);
-
             billAmountRepository.save(billAmountDetails);
-
+        BalanceDetails balanceDetails = balanceDetailsRepository.findByCno(firstBillItem.getCno());
+        balanceDetails.setReason("invoice added");
+        balanceDetails.setType("Credit");
+        Double balanceAmount=balanceDetails.getTotalBalance()+totalBillAmount;
+        balanceDetails.setTotalBalance(balanceAmount);
+        balanceDetails.setLastUpdatedDate(firstBillItem.getBilling_date());
+        balanceDetails.setLastUpdateAmount(totalBillAmount);
+        balanceDetailsRepository.save(balanceDetails);
 
         return newInvoiceNo;
     }
@@ -274,7 +318,7 @@ public class EzbillingBoImpl implements EzbillingBo {
 
             // Wait for the delete operation to complete
             deleteFuture.get(); // This will block until the delete operation is completed
-
+            Double totalAmount=0.0;
             // Update and save new billing details
             for (BillingDetails billingDetails : billingDetailsList) {
                 Optional<BillingDetails> result = savedBillDetails.stream()
@@ -310,8 +354,32 @@ public class EzbillingBoImpl implements EzbillingBo {
                     newStockDetails.setIn_stock_units(stockDetails.getIn_stock_units()-billingDetails.getQty());
                     stockRepository.updateBillItemInStock(newStockDetails);
                 }
-                billingDetails.setAmount_after_disc((billingDetails.getAmount() * billingDetails.getQty()) - percentageUtils.getPercentageAmount(billingDetails.getAmount() * billingDetails.getQty(), billingDetails.getDisc()));
+                billingDetails.setAmount_after_disc(billingDetails.getAmount() * billingDetails.getQty());
                 billItemsRepository.save(billingDetails);
+                totalAmount=totalAmount+billingDetails.getAmount() * billingDetails.getQty();
+            }
+            BillAmountDetails billAmountDetails = billAmountRepository.findByBno(firstBillItem.getBno());
+            BalanceDetails existingBalanceDetails = balanceDetailsRepository.findByCno(firstBillItem.getCno());
+            existingBalanceDetails.setReason("Invoice Updated");
+            Double existingBalance= existingBalanceDetails.getTotalBalance();
+            if(billAmountDetails.getAmount()>totalAmount){
+                existingBalanceDetails.setType("Debit");
+                Double differenceAmount= billAmountDetails.getAmount()-totalAmount;
+                billAmountDetails.setAmount(billAmountDetails.getAmount()-differenceAmount);
+                billAmountRepository.save(billAmountDetails);
+                existingBalanceDetails.setTotalBalance(existingBalance-differenceAmount);
+                existingBalanceDetails.setLastUpdatedDate(firstBillItem.getBilling_date());
+                existingBalanceDetails.setLastUpdateAmount(differenceAmount);
+                balanceDetailsRepository.save(existingBalanceDetails);
+            }else if(billAmountDetails.getAmount()<totalAmount){
+                existingBalanceDetails.setType("Credit");
+                Double differenceAmount= totalAmount-billAmountDetails.getAmount();
+                billAmountDetails.setAmount(billAmountDetails.getAmount()+differenceAmount);
+                billAmountRepository.save(billAmountDetails);
+                existingBalanceDetails.setTotalBalance(existingBalance+differenceAmount);
+                existingBalanceDetails.setLastUpdatedDate(firstBillItem.getBilling_date());
+                existingBalanceDetails.setLastUpdateAmount(differenceAmount);
+                balanceDetailsRepository.save(existingBalanceDetails);
             }
             return firstBillItem.getBno();
         } catch (Exception e) {
@@ -499,7 +567,9 @@ public class EzbillingBoImpl implements EzbillingBo {
         List<BillAmountDetails> billAmountDetails = billAmountRepository.findAll();
         for (BillAmountDetails amountDetails : billAmountDetails
         ){
+            System.out.println("cno"+amountDetails.getCno());
         Customer customer = customerRepository.findByCno(amountDetails.getCno());
+            System.out.println("cusotmer"+customer.getDgst());
         if(customer !=null) {
             amountDetails.setCno(customer.getId());
             billAmountRepository.save(amountDetails);
@@ -577,8 +647,235 @@ public class EzbillingBoImpl implements EzbillingBo {
        }
        return billAmountDetailsWithCustomerNames;
    }
+   public List<SumOfBillsAmount> getSumOfBillsAmount(String date){
+        return billingRepositry.getAggregatedResults(date);
+   }
+
+   public void copyCustomers(String dgst){
+         List<JpaCustomer> jpaCustomers=jpaCustomerRepo.findAll();
+       for (JpaCustomer jpaCustomer : jpaCustomers
+       ){
+           Customer customer = new Customer();
+           customer.setCno(String.valueOf(jpaCustomer.getCno()));
+           customer.setCadd(jpaCustomer.getCadd());
+           customer.setCname(jpaCustomer.getCname());
+           customer.setDgst(dgst);
+           customer.setIsigst(jpaCustomer.getIsigst());
+           customer.setCpno(jpaCustomer.getCpno());
+           customer.setLegal_name(jpaCustomer.getLegal_name());
+           customer.setSupplyplace(jpaCustomer.getSupplyplace());
+           customerRepository.save(customer);
+       }
+
+   }
+
+   public void copyProducts(String dgst){
+   List<JpaProduct> jpaProducts= jpaProductRepo.findAll();
+       for (JpaProduct jpaProduct:jpaProducts
+            ) {
+           ProductDetails productDetails = new ProductDetails();
+           productDetails.setPname(jpaProduct.getPname().trim());
+           productDetails.setDgst(dgst);
+           productDetails.setCess(0);
+           productDetails.setRate(jpaProduct.getRate());
+           productDetails.setPcom(jpaProduct.getPcom());
+           productDetails.setHsn_code(jpaProduct.getHsnCode());
+           productDetails.setRel_prod(jpaProduct.getRelProd());
+           productDetails.setIs_sp(jpaProduct.getIsSp());
+           productDetails.setMrp(jpaProduct.getMrp());
+           productDetails.setVatp(jpaProduct.getVatp());
+           productDetails.setUnites_per(jpaProduct.getUnitesPer());
+           productDetails.setNo_of_unites(jpaProduct.getNoOfUnites());
+           productRepository.save(productDetails);
+       }
 
 
 
+   }
+    public void copySoldStock(String dgst){
+    List<JpaSoldStock> jpaSoldStocks = jpaSoldStockRepo.findAllDistinct();
+        for (JpaSoldStock jpaSoldStock:jpaSoldStocks
+             ) {
+            BillingDetails billingDetails = new BillingDetails();
+            billingDetails.setBilling_date(jpaSoldStock.getBillingDate().toString());
+            Customer customer = customerRepository.findByCno(jpaSoldStock.getCno().toString());
+            billingDetails.setCno(customer.getId());
+            System.out.println("product name"+jpaSoldStock.getProductName());
+            ProductDetails productDetails= productRepository.findByPname(jpaSoldStock.getProductName());
+            if(productDetails==null){
+                Map<String, String> products = new HashMap<>();
 
+
+                products.put("Lemon rice 5/-", "Lemon rice 5/- (40pcs)");
+                products.put("Chilly 25G 10/-", "Chilly Powder 10/-(40pcs)");
+                products.put("Chilly 500G", "Chilly Powder 500G");
+                products.put("Chilly 25G 10/-(40pcs)", "Chilly Powder 10/-(40pcs)");
+                products.put("Chilly Powder 500G ", "Chilly Powder 500G");
+                products.put("Samar 100G offer", "Sambar 100G offer");
+                products.put("Apis Honey 25g (24pcs)", "Apis Honey 20g (24pcs)");
+                products.put("AACHI CHICKEN 5/-(600P)", "AACHI CHICKEN MASALA 5/-(600P)");
+                products.put("AACHI GARAM 5/-(600P)", "AACHI GARAM MASALA 5/-(600P)");
+                products.put("AACHI MUTTON  5/-(1200P)", "AACHI MUTTON MASALA  5/-(1200P)");
+                products.put("TF-GGP 5/-", "TF-GGP 5/- (30p)");
+                products.put("fru str jelly", "fru str jelly");
+                products.put("Lemon rice 5/- ", "Lemon rice 5/- (40pcs)");
+                products.put("fru str jelly ", "fru str jelly");
+                products.put("TF-GGP 5/- (30p) ", "TF-GGP 5/- (30p)");
+                products.put("Puliyogare 10/- ", "Puliyogare 10/- ");
+                products.put("Chilly 500G ", "Chilly Powder 10/-(40pcs)");
+                products.put("Xtra Dish Wash Powder ", "Xtra Dish Wash Powder ");
+                products.put("Chilly powder 50g ", "Chilly powder 50g ");
+                products.put("Samar powder 500G", "Sambar powder 500G");
+                products.put("AACHI PEPER 6/-(600P)", "AACHI PEPER POWDER 6/-(600P)");
+                products.put("Aachi Chicken Masala 10/-(60pcs)", "Aachi Chicken Masala 10/-(50pcs)");
+                products.put("Aachi Mutton Masala 10/-(60pcs)", "Aachi Mutton Masala 10/-(50pcs)");
+                products.put("Aachi Biryani Masala 15/- (60pcs)", "Aachi Biryani Masala 15/- (50pcs)");
+                products.put("Aachi Garam Masala 10/-(60pcs)", "Aachi Garam Masala 10/-(50pcs)");
+
+
+                if(products.containsKey(jpaSoldStock.getProductName())){
+                    ProductDetails productDetails2 = productRepository.findByPname(products.get(jpaSoldStock.getProductName()));
+                    billingDetails.setProduct_name(productDetails2.getId());
+                }
+                else {
+                    Scanner scanner = new Scanner(System.in);
+                    JpaSoldStock jpaSoldStock1 = jpaSoldStock;
+                    jpaSoldStock1.setAmount(jpaSoldStock.getAmount() / jpaSoldStock1.getQty());
+//                System.out.println("product bill details"+jpaSoldStock1.toString());
+                    printProductTable(jpaSoldStock);
+                    System.out.print("Product " + jpaSoldStock.getProductName() + " got renamed Please enter Current name");
+                    String productName = scanner.nextLine();
+                    ProductDetails productDetails1 = productRepository.findByPname(productName);
+                    billingDetails.setProduct_name(productDetails1.getId());
+                }
+            }else {
+                billingDetails.setProduct_name(productDetails.getId());
+            }
+            billingDetails.setAmount(jpaSoldStock.getAmount()/jpaSoldStock.getQty());
+            billingDetails.setDisc(jpaSoldStock.getDisc());
+            billingDetails.setDgst(dgst);
+            billingDetails.setQty(jpaSoldStock.getQty());
+            billingDetails.setFree(jpaSoldStock.getFree().toString());
+            billingDetails.setHsn_code(jpaSoldStock.getHsnCode());
+            billingDetails.setProduct_gst(jpaSoldStock.getProductGst());
+            billingDetails.setUnites_per(jpaSoldStock.getUnitesPer());
+            billingDetails.setMrp(jpaSoldStock.getMrp());
+            billingDetails.setProduct_company(jpaSoldStock.getProductCompany());
+            billingDetails.setAmount_after_disc(jpaSoldStock.getAmountAfterDisc());
+            billingDetails.setBno(jpaSoldStock.getBno());
+            billItemsRepository.save(billingDetails);
+              }
+
+
+    }
+
+    public void copyCompanyDetails(String dgst){
+//        List<JpaCompanyGstList> jpaCompanyGstLists= jpaCompanyRepo.findCompanyGstGroupedByCname();
+        List<Object[]> results = jpaCompanyRepo.findCompanyGstGroupedByCname();
+
+        List<JpaCompanyGstList> companies = new ArrayList<>();
+        for (Object[] result : results) {
+            Integer cid = (Integer) result[0];
+            String cname = (String) result[1];
+            List<Integer> gstList = Arrays.stream(((String) result[2]).split(","))
+                    .map(Integer::parseInt)
+                    .collect(Collectors.toList());
+            companies.add(new JpaCompanyGstList(cid, cname, gstList));
+        }
+
+//        return companies;
+
+        for (JpaCompanyGstList jpaCompanyGstList : companies
+        ){
+            CompanyDetails companyDetails = new CompanyDetails();
+            companyDetails.setDgst(dgst);
+            companyDetails.setName(jpaCompanyGstList.getCname());
+            companyDetails.setGstPercentage(jpaCompanyGstList.getGstList());
+            companyRepository.save(companyDetails);
+        }
+    }
+
+    public  void printProductTable(JpaSoldStock jpaSoldStock) {
+
+        // Print the table header
+        System.out.printf("%-5s %-5s %-15s %-5s %-5s %-10s %-10s %-5s %-10s %-10s %-10s %-15s %-5s %-15s %-5s%n",
+                "Cno", "Bno", "Product Name", "GST", "Qty", "Amount", "Billing Date", "Free", "HSN Code", "Units/Per", "MRP", "Product Company", "Disc", "Amount After Disc", "ID");
+        System.out.println("--------------------------------------------------------------------------------------------------------------------------------------------------------------------");
+
+        // Print each product
+//        for (Product product : products) {
+            System.out.printf("%-5s %-5s %-15s %-5s %-5s %-10s %-10s %-5s %-10s %-10s %-10s %-15s %-5s %-15s %-5s%n",
+                    jpaSoldStock.getCno(), jpaSoldStock.getBno(), jpaSoldStock.getProductName(), jpaSoldStock.getProductGst(), jpaSoldStock.getQty(),
+                    jpaSoldStock.getAmount(), jpaSoldStock.getBillingDate(), jpaSoldStock.getFree(), jpaSoldStock.getHsnCode(),
+                    jpaSoldStock.getUnitesPer(), jpaSoldStock.getMrp(), jpaSoldStock.getProductCompany(), jpaSoldStock.getDisc(),
+                    jpaSoldStock.getAmountAfterDisc(), jpaSoldStock.getId());
+//        }
+    }
+
+    public void copyBillsAmount(String dgst){
+        List<JpaBillsAmount> jpaBillsAmounts = jpaBillsAmountRepo.findAll();
+        for (JpaBillsAmount jpaBillsAmount:jpaBillsAmounts
+             ) {
+            BillAmountDetails billAmountDetails = new BillAmountDetails();
+            Customer customer = customerRepository.findByCno(jpaBillsAmount.getCno().toString());
+            billAmountDetails.setCno(customer.getId());
+            billAmountDetails.setAmount(jpaBillsAmount.getAmount());
+            billAmountDetails.setDate(jpaBillsAmount.getDate().toString());
+            billAmountDetails.setBno(jpaBillsAmount.getBno());
+            billAmountDetails.setDgst(dgst);
+            billAmountRepository.save(billAmountDetails);
+
+        }
+    }
+
+   public void copyCustomerToBalanceDetails(String dgst){
+        List<Customer> customerList = customerRepository.findAll();
+       for (Customer customer:customerList
+            ) {
+           BalanceDetails balanceDetails = new BalanceDetails();
+           balanceDetails.setCno(customer.getId());
+           balanceDetails.setCname(customer.getCname());
+           balanceDetails.setTotalBalance(0.0);
+           balanceDetails.setDebitBalance(0.0);
+           balanceDetails.setCreditBalance(0.0);
+           balanceDetails.setDgst(dgst);
+           balanceDetailsRepository.save(balanceDetails);
+
+       }
+
+
+   }
+
+   public List<BalanceDetails> getBalanceDetails(String dgst){
+        return balanceDetailsRepository.findByDgst(dgst);
+   }
+
+   public void modifyBalanceDetails(BalanceDetails balanceDetails){
+
+       LocalDate date = LocalDate.now();
+       DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+       String updatedDate = date.format(formatter);
+       System.out.println("updated "+updatedDate);
+
+        BalanceDetails existingBalanceDetails = balanceDetailsRepository.findByCno(balanceDetails.getCno());
+        existingBalanceDetails.setLastUpdatedDate(updatedDate);
+        existingBalanceDetails.setReason("Manually Updated");
+        if(balanceDetails.getDebitBalance()!=0){
+            existingBalanceDetails.setType("Debit");
+            Double balance=existingBalanceDetails.getTotalBalance()-balanceDetails.getDebitBalance();
+            existingBalanceDetails.setLastUpdateAmount(balanceDetails.getDebitBalance());
+            existingBalanceDetails.setTotalBalance(balance);
+        }else if(balanceDetails.getCreditBalance()!=0) {
+            existingBalanceDetails.setType("Credit");
+           Double balance=existingBalanceDetails.getTotalBalance()+balanceDetails.getCreditBalance();
+            existingBalanceDetails.setLastUpdateAmount(balanceDetails.getCreditBalance());
+            existingBalanceDetails.setTotalBalance(balance);
+       }
+        balanceDetailsRepository.save(existingBalanceDetails);
+
+   }
+
+   public BalanceDetails getBalanceDetailsById(String id){
+        return balanceDetailsRepository.findByCno(id);
+   }
 }

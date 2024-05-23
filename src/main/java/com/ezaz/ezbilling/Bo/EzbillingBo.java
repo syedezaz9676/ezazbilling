@@ -1,11 +1,9 @@
 package com.ezaz.ezbilling.Bo;
 
 import com.ezaz.ezbilling.model.*;
-import com.ezaz.ezbilling.repository.StockItemDetails;
+import com.ezaz.ezbilling.model.mysql.JpaCustomer;
 
 import java.text.ParseException;
-import java.time.LocalDate;
-import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -66,6 +64,16 @@ public interface EzbillingBo {
     public void addDgst(String dgst);
     public void correctAmount();
     public List<BillAmountDetails> getBillsAmount(String dgst);
+    public List<SumOfBillsAmount> getSumOfBillsAmount(String date);
+    public void copyCustomers(String dgst);
+    public void copyProducts(String dgst);
+    public void copySoldStock(String dgst);
+    public void copyCompanyDetails(String dgst);
+    public void copyBillsAmount(String dgst);
+    public void copyCustomerToBalanceDetails(String dgst);
+    public void modifyBalanceDetails(BalanceDetails balanceDetails);
+    List<BalanceDetails> getBalanceDetails(String dgst);
+    public BalanceDetails getBalanceDetailsById(String id);
     }
 
 

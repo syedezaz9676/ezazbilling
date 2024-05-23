@@ -13,5 +13,6 @@ public interface ProductRepository extends MongoRepository<ProductDetails, Strin
     List<ProductDetails> findAllByDgst(String dgst);
 
     List<ProductNames> findAllByPcom(String pcom);
+    ProductDetails findByPname(String pname);
 
 }

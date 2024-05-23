@@ -18,7 +18,7 @@ public interface BillItemsRepository extends MongoRepository<BillingDetails, Str
     @Query("{ 'cno' : ?0, 'billing_date' : { $gte: ?1, $lte: ?2 } }, { 'bno': 1 }")
     List<BillNo> findBnoByCnoAndBillingDateBetween(String cno, String startDate, String endDate);
 
-    List<BillingDetails> findByCno(int cno);
+    List<BillingDetails> findByCno(String cno);
 
     @Query(value = "{'bno': ?0}")
     List<BillAggregationResult> sumAmountByBnoGroupByProductGstAndBillingDate(String bno);

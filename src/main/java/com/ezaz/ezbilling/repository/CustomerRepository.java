@@ -13,4 +13,5 @@ public interface CustomerRepository  extends MongoRepository<Customer, String> ,
 
     List<Customer> findAllByDgst(String dgst);
     Customer findByCno(String cno);
+    Customer findByCname(String cname);
 }

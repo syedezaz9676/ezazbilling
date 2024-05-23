@@ -7,6 +7,7 @@ import java.util.List;
 
 public interface BillAmountRepository extends MongoRepository<BillAmountDetails,String> {
     List<BillAmountDetails>findAllByDgst(String dgst);
+    BillAmountDetails findByBno(String bno);
 
 
 }

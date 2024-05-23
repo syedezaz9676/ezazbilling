@@ -2,15 +2,14 @@ package com.ezaz.ezbilling.controller;
 
 import com.ezaz.ezbilling.Bo.EzbillingBo;
 import com.ezaz.ezbilling.model.*;
+import com.ezaz.ezbilling.model.mysql.JpaCustomer;
 import com.ezaz.ezbilling.repository.BillingRepositry;
 import com.ezaz.ezbilling.repository.CompanyRepository;
-import com.ezaz.ezbilling.repository.StockItemDetails;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.text.ParseException;
-import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -263,5 +262,74 @@ public class ezbillingController {
     @RequestMapping(value="/getbillsamount/{dgst}", method = RequestMethod.GET)
     public List<BillAmountDetails> getBillsAmount (@PathVariable String dgst){
         return ezbillingBo.getBillsAmount(dgst);
+    }
+
+    @CrossOrigin(origins = "http://localhost:8081/")
+    @RequestMapping(value="/getsumofbillsamount/{date}", method = RequestMethod.GET)
+    public List<SumOfBillsAmount> getSumOFBillsAmount (@PathVariable String date){
+        return ezbillingBo.getSumOfBillsAmount(date);
+    }
+
+    @CrossOrigin(origins = "http://localhost:8081/")
+    @RequestMapping(value="/copycusotomerstomdb/{dgst}", method = RequestMethod.GET)
+    public String copyCustomersToMDB (@PathVariable String dgst){
+         ezbillingBo.copyCustomers(dgst);
+         return "all customer copied to mongodb";
+    }
+    @CrossOrigin(origins = "http://localhost:8081/")
+    @RequestMapping(value="/copyproductstomdb/{dgst}", method = RequestMethod.GET)
+    public String copyProductsToMDB (@PathVariable String dgst){
+        ezbillingBo.copyProducts(dgst);
+        return "all products copied to mongodb";
+    }
+
+    @CrossOrigin(origins = "http://localhost:8081/")
+    @RequestMapping(value="/copysoldstocktomdb/{dgst}", method = RequestMethod.GET)
+    public String copySoldStockToMDB (@PathVariable String dgst){
+        ezbillingBo.copySoldStock(dgst);
+        return "all Soldstock copied to mongodb";
+    }
+
+    @CrossOrigin(origins = "http://localhost:8081/")
+    @RequestMapping(value="/copycompanydetailstomdb/{dgst}", method = RequestMethod.GET)
+    public String copyCompanyDetailsToMDB (@PathVariable String dgst){
+        ezbillingBo.copyCompanyDetails(dgst);
+        return "all company details copied to mongodb";
+    }
+
+    @CrossOrigin(origins = "http://localhost:8081/")
+    @RequestMapping(value="/copybillsamounttomdb/{dgst}", method = RequestMethod.GET)
+    public String copyBillsAmountToMDB (@PathVariable String dgst){
+        ezbillingBo.copyBillsAmount(dgst);
+        return "all bills amount copied to mongodb";
+    }
+
+    @CrossOrigin(origins = "http://localhost:8081/")
+    @RequestMapping(value="/copycusotmerstobalancedetails/{dgst}", method = RequestMethod.GET)
+    public String copyCustomerToBalanceDetails (@PathVariable String dgst){
+        ezbillingBo.copyCustomerToBalanceDetails(dgst);
+        return "all customer moved to balance details in mongodb";
+    }
+
+    @CrossOrigin(origins = "http://localhost:8081/")
+    @RequestMapping(value="/getbalancedetails/{dgst}", method = RequestMethod.GET)
+    public List<BalanceDetails> getBalanceDetails (@PathVariable String dgst){
+        return ezbillingBo.getBalanceDetails(dgst);
+
+    }
+
+    @CrossOrigin(origins = "http://localhost:8081/")
+    @PostMapping("/modifybalancedetails")
+    public String modifyBalancedetails(@RequestBody BalanceDetails balanceDetails){
+        System.out.println("balanceDetails"+balanceDetails);
+        ezbillingBo.modifyBalanceDetails(balanceDetails);
+        String success= "sucess";
+        return success;
+    }
+    @CrossOrigin(origins = "http://localhost:8081/")
+    @RequestMapping(value="/getbalancedetailsbyid/{id}", method = RequestMethod.GET)
+    public BalanceDetails getBalanceDetailsById (@PathVariable String id){
+        return ezbillingBo.getBalanceDetailsById(id);
+
     }
 }

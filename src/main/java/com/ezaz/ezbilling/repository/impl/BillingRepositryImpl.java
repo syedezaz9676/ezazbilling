@@ -185,9 +185,25 @@ public class BillingRepositryImpl  implements BillingRepositry {
 
         Update update = new Update();
         update.set("dgst", dgst);
-        update.rename("Amount_after_disc", "amount_after_disc");
+//        update.rename("Amount_after_disc", "amount_after_disc");
 
         mongoTemplate.updateMulti(query, update, BillingDetails.class);
+    }
+
+    public List<SumOfBillsAmount> getAggregatedResults(String billingDate) {
+        Aggregation aggregation = Aggregation.newAggregation(
+                Aggregation.match(Criteria.where("billing_date").is(billingDate)),
+                Aggregation.group("bno", "billing_date")
+                        .sum("amount_after_disc").as("amount")
+                        .first("bno").as("bno")
+                        .first("billing_date").as("date")
+                        .first("cno").as("cno")
+                        .first("dgst").as("dgst"),
+                Aggregation.project("bno", "date", "amount","cno","dgst")
+        );
+
+        AggregationResults<SumOfBillsAmount> results = mongoTemplate.aggregate(aggregation, "soldstock", SumOfBillsAmount.class);
+        return results.getMappedResults();
     }
 
 
