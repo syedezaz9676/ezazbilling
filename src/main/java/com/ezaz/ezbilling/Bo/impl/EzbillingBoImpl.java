@@ -118,7 +118,6 @@ public class EzbillingBoImpl implements EzbillingBo {
         balanceDetails.setCno(customer.getId());
         balanceDetails.setDgst(customer1.getDgst());
         balanceDetailsRepository.save(balanceDetails);
-        mongodbBackup.BackUp();
 
     }
 
@@ -249,6 +248,7 @@ public class EzbillingBoImpl implements EzbillingBo {
         balanceDetails.setLastUpdatedDate(firstBillItem.getBilling_date());
         balanceDetails.setLastUpdateAmount(totalBillAmount);
         balanceDetailsRepository.save(balanceDetails);
+        mongodbBackup.BackUp();
 
         return newInvoiceNo;
     }
