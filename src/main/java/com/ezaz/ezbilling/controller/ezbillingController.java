@@ -1,6 +1,7 @@
 package com.ezaz.ezbilling.controller;
 
 import com.ezaz.ezbilling.Bo.EzbillingBo;
+import com.ezaz.ezbilling.Util.MongodbBackup;
 import com.ezaz.ezbilling.model.*;
 import com.ezaz.ezbilling.model.mysql.JpaCustomer;
 import com.ezaz.ezbilling.repository.BillingRepositry;
@@ -25,6 +26,8 @@ public class ezbillingController {
 
     @Autowired
     private EzbillingBo ezbillingBo;
+    @Autowired
+    private MongodbBackup mongodbBackup;
 
     @CrossOrigin(origins = "http://localhost:8081/")
     @PostMapping("/savecompanydetails")
@@ -343,6 +346,13 @@ public class ezbillingController {
         ezbillingBo.copyBillsAmount(dgst);
         ezbillingBo.copyProductToStock(dgst);
         ezbillingBo.copyCustomerToBalanceDetails(dgst);
+
+    }
+
+    @CrossOrigin(origins = "http://localhost:8081/")
+    @RequestMapping(value="/dorestore", method = RequestMethod.GET)
+    public void restore (){
+        mongodbBackup.Restore();
 
     }
 }

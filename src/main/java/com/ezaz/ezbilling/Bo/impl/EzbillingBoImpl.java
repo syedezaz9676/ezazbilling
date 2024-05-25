@@ -1,6 +1,7 @@
 package com.ezaz.ezbilling.Bo.impl;
 
 import com.ezaz.ezbilling.Bo.EzbillingBo;
+import com.ezaz.ezbilling.Util.MongodbBackup;
 import com.ezaz.ezbilling.Util.PercentageUtils;
 import com.ezaz.ezbilling.model.*;
 import com.ezaz.ezbilling.model.mysql.*;
@@ -29,6 +30,9 @@ public class EzbillingBoImpl implements EzbillingBo {
 
     @Autowired
     private MongoTemplate mongoTemplate;
+
+   @Autowired
+   private MongodbBackup mongodbBackup;
 
     private final CustomerRepository customerRepository;
     private final GstCodeDetailsRepo gstCodeDetailsRepo;
@@ -64,7 +68,8 @@ public class EzbillingBoImpl implements EzbillingBo {
     private final JpaBillsAmountRepo jpaBillsAmountRepo;
     private final BalanceDetailsRepository balanceDetailsRepository;
 
-    public EzbillingBoImpl(CustomerRepository customerRepository, GstCodeDetailsRepo gstCodeDetailsRepo, ChangeDateFormatRepo changeDateFormatRepo, BillAmountRepository billAmountRepository, CompanyRepository companyRepository, ProductRepository productRepository, ProductDetailsRepository productDetailsRepository, CompanyDetailsRepository companyDetailsRepository, CustomerRepositoryCustom customerRepositoryCustom, UsersRepository usersRepository, BillingRepositry billingRepositry, BillItemsRepository billItemsRepository, PercentageUtils percentageUtils, StockItemDetails stockItemDetails, StockRepository stockRepository, JpaCustomerRepo jpaCustomerRepo, JpaProductRepo jpaProductRepo, JpaSoldStockRepo jpaSoldStockRepo, JpaCompanyRepo jpaCompanyRepo, JpaBillsAmountRepo jpaBillsAmountRepo, BalanceDetailsRepository balanceDetailsRepository) {
+    public EzbillingBoImpl( CustomerRepository customerRepository, GstCodeDetailsRepo gstCodeDetailsRepo, ChangeDateFormatRepo changeDateFormatRepo, BillAmountRepository billAmountRepository, CompanyRepository companyRepository, ProductRepository productRepository, ProductDetailsRepository productDetailsRepository, CompanyDetailsRepository companyDetailsRepository, CustomerRepositoryCustom customerRepositoryCustom, UsersRepository usersRepository, BillingRepositry billingRepositry, BillItemsRepository billItemsRepository, PercentageUtils percentageUtils, StockItemDetails stockItemDetails, StockRepository stockRepository, JpaCustomerRepo jpaCustomerRepo, JpaProductRepo jpaProductRepo, JpaSoldStockRepo jpaSoldStockRepo, JpaCompanyRepo jpaCompanyRepo, JpaBillsAmountRepo jpaBillsAmountRepo, BalanceDetailsRepository balanceDetailsRepository) {
+
         this.customerRepository = customerRepository;
         this.gstCodeDetailsRepo = gstCodeDetailsRepo;
         this.changeDateFormatRepo = changeDateFormatRepo;
@@ -86,6 +91,7 @@ public class EzbillingBoImpl implements EzbillingBo {
         this.jpaCompanyRepo = jpaCompanyRepo;
         this.jpaBillsAmountRepo = jpaBillsAmountRepo;
         this.balanceDetailsRepository = balanceDetailsRepository;
+
     }
 
     @Override
@@ -112,6 +118,8 @@ public class EzbillingBoImpl implements EzbillingBo {
         balanceDetails.setCno(customer.getId());
         balanceDetails.setDgst(customer1.getDgst());
         balanceDetailsRepository.save(balanceDetails);
+        mongodbBackup.BackUp();
+
     }
 
     @Override
