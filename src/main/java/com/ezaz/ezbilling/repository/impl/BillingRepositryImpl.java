@@ -206,6 +206,18 @@ public class BillingRepositryImpl  implements BillingRepositry {
         return results.getMappedResults();
     }
 
+    public List<SalesPerGST> getGstSales(List<String> cnos, String startDate, String endDate) {
+        Aggregation aggregation = Aggregation.newAggregation(
+                Aggregation.match(Criteria.where("cno").in(cnos)
+                        .andOperator(Criteria.where("billing_date").gte(startDate),
+                                Criteria.where("billing_date").lte(endDate))),
+                Aggregation.group("product_gst")
+                        .sum("amount_after_disc").as("totalAmountAfterDisc")
+                        .first("product_gst").as("productGst")
+        );
 
+        AggregationResults<SalesPerGST> results = mongoTemplate.aggregate(aggregation, "soldstock", SalesPerGST.class);
+        return results.getMappedResults();
+    }
 }
 

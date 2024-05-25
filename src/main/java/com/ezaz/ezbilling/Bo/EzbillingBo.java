@@ -74,6 +74,8 @@ public interface EzbillingBo {
     public void modifyBalanceDetails(BalanceDetails balanceDetails);
     List<BalanceDetails> getBalanceDetails(String dgst);
     public BalanceDetails getBalanceDetailsById(String id);
+    public  List<SalesPerGST> getGstSalesOfGstCustomers(String fromDate, String toDate);
+    public  List<SalesPerGST> getGstSalesOfCustomers(String fromDate, String toDate);
     }
 
 

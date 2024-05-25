@@ -49,13 +49,26 @@ public class CustomerRepositoryImpl implements CustomerRepositoryCustom {
 
     public List<String> findGstCustomerIdsWithoutIgst() {
         Query query = new Query();
-        query.addCriteria(Criteria.where("ctno").ne("not available").and("isigst").is("No"));
+        query.addCriteria(Criteria.where("ctno").ne("not avaliable").and("isigst").is("No"));
         List<Customer> customers = mongoTemplate.find(query, Customer.class);
         return customers.stream().map(Customer::getId).collect(Collectors.toList());
     }
     public List<String> findGstCustomerIdsWithIgst() {
         Query query = new Query();
-        query.addCriteria(Criteria.where("ctno").ne("not available").and("isigst").is("Yes"));
+        query.addCriteria(Criteria.where("ctno").ne("not avaliable").and("isigst").is("Yes"));
+        List<Customer> customers = mongoTemplate.find(query, Customer.class);
+        return customers.stream().map(Customer::getId).collect(Collectors.toList());
+    }
+
+    public List<String> findGstCustomerIdsWithGst() {
+        Query query = new Query();
+        query.addCriteria(Criteria.where("ctno").ne("not avaliable"));
+        List<Customer> customers = mongoTemplate.find(query, Customer.class);
+        return customers.stream().map(Customer::getId).collect(Collectors.toList());
+    }
+    public List<String> findCustomerIds() {
+        Query query = new Query();
+//        query.addCriteria(Criteria.where("ctno").ne("not available").and("isigst").is("Yes"));
         List<Customer> customers = mongoTemplate.find(query, Customer.class);
         return customers.stream().map(Customer::getId).collect(Collectors.toList());
     }

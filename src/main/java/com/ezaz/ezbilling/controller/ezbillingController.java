@@ -355,4 +355,18 @@ public class ezbillingController {
         mongodbBackup.Restore();
 
     }
+    @CrossOrigin(origins = "http://localhost:8081/")
+    @RequestMapping(value="/getgstsalesofgstcusotmers", method = RequestMethod.GET)
+    public List<SalesPerGST> getSalesofGstCustomers (@RequestParam("startDate") String startDate, @RequestParam("endDate") String endDate) throws ParseException {
+        return ezbillingBo.getGstSalesOfGstCustomers(startDate,endDate);
+
+    }
+
+    @CrossOrigin(origins = "http://localhost:8081/")
+    @RequestMapping(value="/getgstsalesofcusotmers", method = RequestMethod.GET)
+    public List<SalesPerGST> getSalesofCustomers (@RequestParam("startDate") String startDate, @RequestParam("endDate") String endDate) throws ParseException {
+        return ezbillingBo.getGstSalesOfCustomers(startDate,endDate);
+
+    }
+
 }
