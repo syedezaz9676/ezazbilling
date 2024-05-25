@@ -66,6 +66,8 @@ public class JwtController {
         user.setGstNo(userDetailsByID.getGstNo());
         user.setContact(userDetailsByID.getContact());
         user.setState(userDetailsByID.getState());
+        user.setVehicalNo(userDetailsByID.getVehicalNo());
+
 
 
         jwtResponse.setUser(user);

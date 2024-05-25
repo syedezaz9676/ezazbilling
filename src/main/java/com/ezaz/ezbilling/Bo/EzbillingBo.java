@@ -39,7 +39,7 @@ public interface EzbillingBo {
 
     public String saveBillItems(List<BillingDetails> billingDetailsList) throws ParseException;
 
-    public List<BillingDetails> getSavedBillDetailsByinvoiceNo(String invoiceNo);
+    public SavedBillandWayBillDetails getSavedBillDetailsByinvoiceNo(String invoiceNo);
 
     public BillDetails getBillDetailsByInvoiceNo(String invoiceNo);
 

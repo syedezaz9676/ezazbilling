@@ -126,7 +126,7 @@ public class ezbillingController {
     @CrossOrigin(origins = "http://localhost:8081/")
     @RequestMapping(value="/getbillDetailsbyinvoiceno/{invoiceNo}", method = RequestMethod.GET)
     public ResponseEntity<?> getbillDetailsbyinvoiceno (@PathVariable String invoiceNo){
-        List<BillingDetails> savedBillDetails= ezbillingBo.getSavedBillDetailsByinvoiceNo(invoiceNo);
+        SavedBillandWayBillDetails savedBillDetails= ezbillingBo.getSavedBillDetailsByinvoiceNo(invoiceNo);
         return ResponseEntity.ok(savedBillDetails);
     }
 
@@ -330,6 +330,19 @@ public class ezbillingController {
     @RequestMapping(value="/getbalancedetailsbyid/{id}", method = RequestMethod.GET)
     public BalanceDetails getBalanceDetailsById (@PathVariable String id){
         return ezbillingBo.getBalanceDetailsById(id);
+
+    }
+
+    @CrossOrigin(origins = "http://localhost:8081/")
+    @RequestMapping(value="/docompeletsetup/{dgst}", method = RequestMethod.GET)
+    public void doCompeleteSetup (@PathVariable String dgst){
+        ezbillingBo.copyCustomers(dgst);
+        ezbillingBo.copyProducts(dgst);
+        ezbillingBo.copySoldStock(dgst);
+        ezbillingBo.copyCompanyDetails(dgst);
+        ezbillingBo.copyBillsAmount(dgst);
+        ezbillingBo.copyProductToStock(dgst);
+        ezbillingBo.copyCustomerToBalanceDetails(dgst);
 
     }
 }

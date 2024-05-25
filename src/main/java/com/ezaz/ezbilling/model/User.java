@@ -24,4 +24,5 @@ public class User {
     private String gstNo;
     private String contact;
     private String state;
+    private String vehicalNo;
 }

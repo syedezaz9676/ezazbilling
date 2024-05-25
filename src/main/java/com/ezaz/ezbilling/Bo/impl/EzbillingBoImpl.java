@@ -246,7 +246,9 @@ public class EzbillingBoImpl implements EzbillingBo {
     }
 
     @Override
-    public List<BillingDetails> getSavedBillDetailsByinvoiceNo(String invoiceNo) {
+    public SavedBillandWayBillDetails getSavedBillDetailsByinvoiceNo(String invoiceNo) {
+
+          SavedBillandWayBillDetails savedBillandWayBillDetails = new SavedBillandWayBillDetails();
            Double total_tax=0.0;
            Double total_gross=0.0;
            Double total_amount=0.0;
@@ -280,7 +282,13 @@ public class EzbillingBoImpl implements EzbillingBo {
 
             billingDetails.setAmount_after_disc(billingDetails.getAmount()*billingDetails.getQty());
         }
-        return savedBillDetails;
+        List<WayBillDetails> wayBillDetails = calculateWayBillDetails(savedBillDetails);
+        System.out.println("waybill"+wayBillDetails);
+
+        savedBillandWayBillDetails.setWayBillDetails(wayBillDetails);
+        savedBillandWayBillDetails.setBillingDetails(savedBillDetails);
+
+        return savedBillandWayBillDetails;
     }
 
     @Override
@@ -518,6 +526,7 @@ public class EzbillingBoImpl implements EzbillingBo {
             user1.setContact(user.getContact());
             user1.setPrefix(user.getPrefix());
             user1.setState(user.getState());
+            user1.setVehicalNo(user.getVehicalNo());
             // Get the collection using mongoTemplate
             String collectionName = "Users"; // adjust the collection name as needed
             mongoTemplate.updateFirst(
@@ -531,7 +540,8 @@ public class EzbillingBoImpl implements EzbillingBo {
                             .set("firmName", user1.getFirmName())
                             .set("gstNo", user1.getGstNo())
                             .set("contact", user1.getContact())
-                            .set("state", user1.getState()),
+                            .set("state", user1.getState())
+                            .set("vehicalNo", user1.getVehicalNo()),
                     collectionName);
 
 
@@ -664,6 +674,7 @@ public class EzbillingBoImpl implements EzbillingBo {
            customer.setCpno(jpaCustomer.getCpno());
            customer.setLegal_name(jpaCustomer.getLegal_name());
            customer.setSupplyplace(jpaCustomer.getSupplyplace());
+           customer.setCtno(jpaCustomer.getCtno());
            customerRepository.save(customer);
        }
 
@@ -701,7 +712,7 @@ public class EzbillingBoImpl implements EzbillingBo {
             Customer customer = customerRepository.findByCno(jpaSoldStock.getCno().toString());
             billingDetails.setCno(customer.getId());
             System.out.println("product name"+jpaSoldStock.getProductName());
-            ProductDetails productDetails= productRepository.findByPname(jpaSoldStock.getProductName());
+            ProductDetails productDetails= productRepository.findByPname(jpaSoldStock.getProductName().trim());
             if(productDetails==null){
                 Map<String, String> products = new HashMap<>();
 
@@ -734,7 +745,7 @@ public class EzbillingBoImpl implements EzbillingBo {
 
 
                 if(products.containsKey(jpaSoldStock.getProductName())){
-                    ProductDetails productDetails2 = productRepository.findByPname(products.get(jpaSoldStock.getProductName()));
+                    ProductDetails productDetails2 = productRepository.findByPname(products.get(jpaSoldStock.getProductName().trim()));
                     billingDetails.setProduct_name(productDetails2.getId());
                 }
                 else {
@@ -878,4 +889,32 @@ public class EzbillingBoImpl implements EzbillingBo {
    public BalanceDetails getBalanceDetailsById(String id){
         return balanceDetailsRepository.findByCno(id);
    }
+
+    public static List<WayBillDetails> calculateWayBillDetails(List<BillingDetails> billingItemDetailsList) {
+        // Group BillingItemDetails by hsn_code and calculate sums
+        Map<String, Double> gstAmountSumMap = billingItemDetailsList.stream()
+                .collect(Collectors.groupingBy(BillingDetails::getHsn_code,
+                        Collectors.summingDouble(BillingDetails::getGstamount)));
+
+        Map<String, Double> amountSumMap = billingItemDetailsList.stream()
+                .collect(Collectors.groupingBy(BillingDetails::getHsn_code,
+                        Collectors.summingDouble(BillingDetails::getAmount)));
+
+        Map<String, Integer> productGstSumMap = billingItemDetailsList.stream()
+                .collect(Collectors.toMap(BillingDetails::getHsn_code,
+                        BillingDetails::getProduct_gst,
+                        (existing, replacement) -> existing));
+
+        // Create WayBillDetails objects using the calculated sums
+        return gstAmountSumMap.entrySet().stream()
+                .map(entry -> {
+                    WayBillDetails wayBillDetails = new WayBillDetails();
+                    wayBillDetails.setHsn_code(entry.getKey());
+                    wayBillDetails.setGstAmountSum(entry.getValue());
+                    wayBillDetails.setAmountSum(amountSumMap.getOrDefault(entry.getKey(), 0.0));
+                    wayBillDetails.setProduct_gst(productGstSumMap.getOrDefault(entry.getKey(), 0));
+                    return wayBillDetails;
+                })
+                .collect(Collectors.toList());
+    }
 }
