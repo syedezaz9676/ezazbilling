@@ -46,7 +46,7 @@ public class JpaSoldStock implements Serializable {
     private LocalDate billingDate;
 
     @Column(name = "free")
-    private Integer free;
+    private String free;
 
     @Column(name = "hsn_code")
     private String hsnCode;

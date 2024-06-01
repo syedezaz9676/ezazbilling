@@ -758,6 +758,39 @@ public class EzbillingBoImpl implements EzbillingBo {
                 products.put("Aachi Mutton Masala 10/-(60pcs)", "Aachi Mutton Masala 10/-(50pcs)");
                 products.put("Aachi Biryani Masala 15/- (60pcs)", "Aachi Biryani Masala 15/- (50pcs)");
                 products.put("Aachi Garam Masala 10/-(60pcs)", "Aachi Garam Masala 10/-(50pcs)");
+                products.put("KESAR BADAM pillow 48x150g", "KESAR BADAM pillow 48x200g");
+                products.put("OAT MEAL DIGESTIVE 1+1 PROMO", "oat meal digestive 1+1*(36pcs )");
+                products.put("AF PET 500ml", "AF PET 600ml");
+                products.put("ATHASIYA DHOOP", "ATHISAYA DHOOP");
+                products.put("Ambica darbar 20g", "Ambica darbar 35g");
+                products.put("naviedya 72", "Naivedya 72");
+                products.put("CHOCORIPPLEpillow48x2000g", "CHOCORIPPLEpillow48x200g");
+                products.put("Unibic chocochip150gdp", "Unibic chocochip150g dp");
+                products.put("OAT MEAL 12x16x37.5g", "OAT MEAL 12x16x50g");
+                products.put("AMR Back pain rollon", "AMR Back pain rollon 50ml");
+                products.put("NO-1", "NO-1 TEA");
+                products.put("Bakingpowder 500g", "Bakingpowder 50g");
+                products.put("naviedya 32", "Naivedya 32");
+                products.put("Amchoor powder68100g", "Amchoor powder100g");
+                products.put("sofit ltr", "SOFIT 1 LTR (V) *");
+                products.put("caramella Lolipop-2/-", "Caramella Lolipop-2/-");
+                products.put("OMD 1+1 48 PIECES", "Unibic omd10/-");
+                products.put("sugar free choco swrill 75g", "sugarfree chocoswrill75g");
+                products.put("Xtra.det.kingsize 325g(40p)", "Xtra.det.kingsize 300g(40p)");
+                products.put("FLU ECLAIRS POUCH 1/-", "F ECLAIRS POUCH 1/-");
+                products.put("sugarfree butter 75*", "sugarfree butter 75g*");
+                products.put("sugarfree oats 75*", "sugarfree oats 75g*");
+                products.put("sugarfree cashew75*", "sugarfree cashew75g*");
+                products.put("ENEGA bodylotion(24p)", "ENEGA bodylotion 20ml(24p)");
+                products.put("B fizz", "B fizz 160 ml");
+                products.put("Aachi Garam masala 10/-(1000p)", "Aachi Garam masala 10/-(500p)");
+                products.put("BUTTERLY 12x12x35g", "BUTTERLY 12x16x35g");
+                products.put("Aachi chilly powder 1kg", "Aachi chilly powder 50gms");
+                products.put("Chips C&N (15stx14p)", "Chips C&N (16st x 14p)");
+                products.put("Parle-G 75/- (16p)", "Parle-G 75/- (14p)");
+                products.put("Chips TT (15stx14p)", "Chips TT (16st x14p)");
+                products.put("A CHICKEN  \\10/-(50P)", "A CHICKEN 10/-(50P)");
+                products.put("Chips C&S (15stx14p)", "Chips C&S (16st x 14p)");
 
 
                 if(products.containsKey(jpaSoldStock.getProductName())){
