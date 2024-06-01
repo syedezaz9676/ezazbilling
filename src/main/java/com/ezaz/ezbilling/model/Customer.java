@@ -29,5 +29,6 @@ public class Customer {
     private String isigst;
     private String supplyplace;
     private String legal_name;
+    private Boolean isEdit;
     private String dgst;;
 }

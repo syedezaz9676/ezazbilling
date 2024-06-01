@@ -13,4 +13,9 @@ import lombok.Setter;
 public class SalesPerGST {
     private Integer productGst;
     private Double totalAmountAfterDisc;
+    private Double taxableAmount;
+
+    public Double getTaxableAmount() {
+        return ((totalAmountAfterDisc/(productGst+100))*100);
+    }
 }

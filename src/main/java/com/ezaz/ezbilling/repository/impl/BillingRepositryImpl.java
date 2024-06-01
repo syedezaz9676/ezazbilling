@@ -93,8 +93,8 @@ public class BillingRepositryImpl  implements BillingRepositry {
                         .sum("qty").as("totalQty"), // Sum the total quantity
                 Aggregation.project("hsn_code", "totalAmount", "totalQty", "product_gst"), // Reproject fields
                 Aggregation.project()
-                        .andExpression("totalAmount * product_gst / 100").as("taxAmount") // Calculate the tax amount
-                        .andExpression("totalAmount-(totalAmount * product_gst / 100)").as("taxableAmount")
+                        .andExpression("totalAmount-((totalAmount/(product_gst+100))*100)").as("taxAmount") // Calculate the tax amount
+                        .andExpression("(totalAmount/(product_gst+100))*100").as("taxableAmount")
                         .and("hsn_code").as("hsn_code")
                         .and("totalAmount").as("totalAmount")
                         .and("totalQty").as("totalQty")
@@ -117,8 +117,8 @@ public class BillingRepositryImpl  implements BillingRepositry {
                         .sum("qty").as("totalQty"), // Sum the total quantity
                 Aggregation.project("hsn_code", "totalAmount", "totalQty", "product_gst"), // Reproject fields
                 Aggregation.project()
-                        .andExpression("totalAmount * product_gst / 100").as("igst") // Calculate the tax amount
-                        .andExpression("totalAmount-(totalAmount * product_gst / 100)").as("taxableAmount")
+                        .andExpression("(totalAmount/(product_gst+100))*100").as("igst") // Calculate the tax amount
+                        .andExpression("totalAmount-((totalAmount/(product_gst+100))*100)").as("taxableAmount")
                         .and("hsn_code").as("hsn_code")
                         .and("totalAmount").as("totalAmount")
                         .and("totalQty").as("totalQty")
@@ -214,6 +214,7 @@ public class BillingRepositryImpl  implements BillingRepositry {
                 Aggregation.group("product_gst")
                         .sum("amount_after_disc").as("totalAmountAfterDisc")
                         .first("product_gst").as("productGst")
+
         );
 
         AggregationResults<SalesPerGST> results = mongoTemplate.aggregate(aggregation, "soldstock", SalesPerGST.class);

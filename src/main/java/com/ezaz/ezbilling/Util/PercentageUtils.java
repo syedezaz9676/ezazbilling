@@ -8,7 +8,7 @@ public class PercentageUtils {
 
 
     public Double getPercentageAmount(Double amount,float per){
-        Double percentageAmount = (amount*(per/100));
+        Double percentageAmount = (amount/100)*per;
         return percentageAmount;
     }
 }

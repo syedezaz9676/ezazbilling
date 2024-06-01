@@ -1,13 +1,11 @@
 package com.ezaz.ezbilling.model;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
+@Data
 @Setter
 @Getter
 @AllArgsConstructor
@@ -21,7 +19,7 @@ public class ProductDetails {
     private Float rate;
     private String pcom;
     private Integer vatp;
-    private String Hsn_code;
+    private String hsn_code;
     private String unites_per;
     private Integer no_of_unites;
     private String  is_sp;

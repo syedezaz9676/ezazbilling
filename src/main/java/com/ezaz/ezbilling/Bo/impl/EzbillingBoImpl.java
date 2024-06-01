@@ -110,15 +110,16 @@ public class EzbillingBoImpl implements EzbillingBo {
 
         customerRepository.save(customer);
         Customer customer1 = customerRepository.findByCname(customer.getCname());
-        BalanceDetails balanceDetails = new BalanceDetails();
-        balanceDetails.setCreditBalance(0.0);
-        balanceDetails.setDebitBalance(0.0);
-        balanceDetails.setTotalBalance(0.0);
-        balanceDetails.setCname(customer.getCname());
-        balanceDetails.setCno(customer.getId());
-        balanceDetails.setDgst(customer1.getDgst());
-        balanceDetailsRepository.save(balanceDetails);
-
+        if(customer.getIsEdit() == false) {
+            BalanceDetails balanceDetails = new BalanceDetails();
+            balanceDetails.setCreditBalance(0.0);
+            balanceDetails.setDebitBalance(0.0);
+            balanceDetails.setTotalBalance(0.0);
+            balanceDetails.setCname(customer.getCname());
+            balanceDetails.setCno(customer.getId());
+            balanceDetails.setDgst(customer1.getDgst());
+            balanceDetailsRepository.save(balanceDetails);
+        }
     }
 
     @Override
@@ -130,7 +131,7 @@ public class EzbillingBoImpl implements EzbillingBo {
     public void saveProductDetails(ProductDetails productDetails) {
 
 
-
+        System.out.println("product details"+productDetails.toString());
         productRepository.save(productDetails);
         ProductDetails productDetails1 = productRepository.findByPname(productDetails.getPname());
         StockDetails stockDetails = new StockDetails();
@@ -269,8 +270,15 @@ public class EzbillingBoImpl implements EzbillingBo {
             Customer customer = customerRepository.findById(billingDetails.getCno()).orElse(null);
             billingDetails.setProduct_name(productDetails.getPname());
             billingDetails.setCess(productDetails.getCess());
-            Double cessAmount= percentageUtils.getPercentageAmount(billingDetails.getAmount(),productDetails.getCess());
-            Double gst_amount =percentageUtils.getPercentageAmount(billingDetails.getAmount(),productDetails.getVatp());
+            System.out.println("productDetails.getPname()"+productDetails.getPname());
+            Double rateAfter = (billingDetails.getAmount()/(productDetails.getVatp()+100))*100;
+
+//            Double cessAmount= percentageUtils.getPercentageAmount(billingDetails.getAmount(),productDetails.getCess());
+//            Double gst_amount =percentageUtils.getPercentageAmount(billingDetails.getAmount(),productDetails.getVatp());
+            Double cessAmount= percentageUtils.getPercentageAmount(rateAfter,productDetails.getCess());
+            Double gst_amount =percentageUtils.getPercentageAmount(rateAfter,productDetails.getVatp());
+            System.out.println("gst_amount"+gst_amount*billingDetails.getQty());
+//            System.out.println("gst_amount"+percentageUtils.getPercentageAmount(billingDetails.getAmount()*billingDetails.getQty(),productDetails.getVatp()));
             Double actualCostBeforeGstAndDiscount = billingDetails.getAmount()-(cessAmount+gst_amount);
             Double actualAmountAfterDisc= actualCostBeforeGstAndDiscount - percentageUtils.getPercentageAmount(actualCostBeforeGstAndDiscount,billingDetails.getDisc());
             Double cessAmountAfterDisc= percentageUtils.getPercentageAmount(actualAmountAfterDisc,productDetails.getCess())*billingDetails.getQty();
@@ -434,12 +442,12 @@ public class EzbillingBoImpl implements EzbillingBo {
                 for (BillAggregationResult billAggregationResult : billAggregationResults) {
                     sumOfGst sumOfGst = new sumOfGst();
                     sumOfGst.setGst(billAggregationResult.getProduct_gst());
-                    sumOfGst.setSumOfGstAmount(billAggregationResult.getTotalAmount()-(billAggregationResult.getTotalAmount()*billAggregationResult.getProduct_gst()/ 100.0));
+                    sumOfGst.setSumOfGstAmount(billAggregationResult.getTotalAmount()-((billAggregationResult.getTotalAmount()/(billAggregationResult.getProduct_gst()+100))*100.0));
                     sumOfGst.setBno(billAggregationResult.getBno());
                     sumOfGst.setBillingDate(billAggregationResult.getBillingDate());
 
                     // Calculate taxable amount by subtracting GST amount from total amount
-                    Double taxableAmount = billAggregationResult.getTotalAmount()-(billAggregationResult.getTotalAmount()*billAggregationResult.getProduct_gst()/ 100.0);
+                    Double taxableAmount = (billAggregationResult.getTotalAmount()-(billAggregationResult.getTotalAmount()/(billAggregationResult.getProduct_gst()+100))*100.0);
 
                     // Check if the current GST value has already been added for this BillGstDetails
                     if (!addedGstValues.contains(sumOfGst.getGst())) {
