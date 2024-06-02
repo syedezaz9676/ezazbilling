@@ -789,7 +789,7 @@ public class EzbillingBoImpl implements EzbillingBo {
                 products.put("Chips C&N (15stx14p)", "Chips C&N (16st x 14p)");
                 products.put("Parle-G 75/- (16p)", "Parle-G 75/- (14p)");
                 products.put("Chips TT (15stx14p)", "Chips TT (16st x14p)");
-                products.put("A CHICKEN  \\10/-(50P)", "A CHICKEN 10/-(50P)");
+                products.put("A CHICKEN  10/-(50P)", "A CHICKEN 10/-(50P)");
                 products.put("Chips C&S (15stx14p)", "Chips C&S (16st x 14p)");
 
 
