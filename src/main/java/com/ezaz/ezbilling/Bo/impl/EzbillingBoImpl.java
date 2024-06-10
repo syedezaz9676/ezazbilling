@@ -109,8 +109,9 @@ public class EzbillingBoImpl implements EzbillingBo {
 
 
         customerRepository.save(customer);
-        Customer customer1 = customerRepository.findByCname(customer.getCname());
-        if(customer.getIsEdit() == false) {
+
+        if(!customer.getIsEdit()) {
+            Customer customer1 = customerRepository.findByCname(customer.getCname());
             BalanceDetails balanceDetails = new BalanceDetails();
             balanceDetails.setCreditBalance(0.0);
             balanceDetails.setDebitBalance(0.0);
@@ -129,19 +130,17 @@ public class EzbillingBoImpl implements EzbillingBo {
 
     @Override
     public void saveProductDetails(ProductDetails productDetails) {
-
-
-        System.out.println("product details"+productDetails.toString());
         productRepository.save(productDetails);
-        ProductDetails productDetails1 = productRepository.findByPname(productDetails.getPname());
-        StockDetails stockDetails = new StockDetails();
-        stockDetails.setPid(productDetails1.getId());
-        stockDetails.setPname(productDetails1.getPname());
-        stockDetails.setIn_stock_units(0.0);
-        stockDetails.setDgst(productDetails.getDgst());
-        stockDetails.setPcom(productDetails.getPcom());
-        stockItemDetails.save(stockDetails);
-
+        if(!productDetails.getIsEdit()) {
+            ProductDetails productDetails1 = productRepository.findByPname(productDetails.getPname());
+            StockDetails stockDetails = new StockDetails();
+            stockDetails.setPid(productDetails1.getId());
+            stockDetails.setPname(productDetails1.getPname());
+            stockDetails.setIn_stock_units(0.0);
+            stockDetails.setDgst(productDetails.getDgst());
+            stockDetails.setPcom(productDetails.getPcom());
+            stockItemDetails.save(stockDetails);
+        }
 
     }
 
@@ -193,23 +192,15 @@ public class EzbillingBoImpl implements EzbillingBo {
     @Override
     public String saveBillItems(List<BillingDetails> billingDetailsList) throws ParseException {
         Double totalBillAmount=0.0;
-
           BillingDetails firstBillItem = billingDetailsList.get(0);
-
           BillAmountDetails billAmountDetails= new BillAmountDetails();
           billAmountDetails.setCno(firstBillItem.getCno());
           billAmountDetails.setDgst(firstBillItem.getDgst());
-         final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
           User user= usersRepository.findById(firstBillItem.getDgst()).orElse(null);
-
-          BillingDetails billingDetailsforMaxBillno = billingRepositry.getMaxBillNo(user.getId());
           int maxBillNoDeciamal=billingRepositry.findRecordWithHighestDecimal(user.getPrefix());
-
         LocalDate currentDate = LocalDate.now();
-
         // Define the desired date format (YYMM)
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yy");
-
         // Format the current date using the formatter
         String formattedDate = currentDate.format(formatter);
 
@@ -250,7 +241,6 @@ public class EzbillingBoImpl implements EzbillingBo {
         balanceDetails.setLastUpdateAmount(totalBillAmount);
         balanceDetailsRepository.save(balanceDetails);
         mongodbBackup.BackUp();
-
         return newInvoiceNo;
     }
 
@@ -258,32 +248,21 @@ public class EzbillingBoImpl implements EzbillingBo {
     public SavedBillandWayBillDetails getSavedBillDetailsByinvoiceNo(String invoiceNo) {
 
           SavedBillandWayBillDetails savedBillandWayBillDetails = new SavedBillandWayBillDetails();
-           Double total_tax=0.0;
-           Double total_gross=0.0;
-           Double total_amount=0.0;
 
         List<BillingDetails> savedBillDetails = billItemsRepository.findByBno(invoiceNo);
 
         for (BillingDetails billingDetails: savedBillDetails
              ) {
             ProductDetails productDetails = productRepository.findById(billingDetails.getProduct_name()).orElse(null);
-            Customer customer = customerRepository.findById(billingDetails.getCno()).orElse(null);
             billingDetails.setProduct_name(productDetails.getPname());
             billingDetails.setCess(productDetails.getCess());
-            System.out.println("productDetails.getPname()"+productDetails.getPname());
             Double rateAfter = (billingDetails.getAmount()/(productDetails.getVatp()+100))*100;
-
-//            Double cessAmount= percentageUtils.getPercentageAmount(billingDetails.getAmount(),productDetails.getCess());
-//            Double gst_amount =percentageUtils.getPercentageAmount(billingDetails.getAmount(),productDetails.getVatp());
             Double cessAmount= percentageUtils.getPercentageAmount(rateAfter,productDetails.getCess());
             Double gst_amount =percentageUtils.getPercentageAmount(rateAfter,productDetails.getVatp());
-            System.out.println("gst_amount"+gst_amount*billingDetails.getQty());
-//            System.out.println("gst_amount"+percentageUtils.getPercentageAmount(billingDetails.getAmount()*billingDetails.getQty(),productDetails.getVatp()));
             Double actualCostBeforeGstAndDiscount = billingDetails.getAmount()-(cessAmount+gst_amount);
             Double actualAmountAfterDisc= actualCostBeforeGstAndDiscount - percentageUtils.getPercentageAmount(actualCostBeforeGstAndDiscount,billingDetails.getDisc());
             Double cessAmountAfterDisc= percentageUtils.getPercentageAmount(actualAmountAfterDisc,productDetails.getCess())*billingDetails.getQty();
             Double gstAmountAfterDisc=percentageUtils.getPercentageAmount(actualAmountAfterDisc,productDetails.getVatp())*billingDetails.getQty();
-            Double totalGrossAmount = actualAmountAfterDisc*billingDetails.getQty();
             billingDetails.setCessAmount(cessAmount*billingDetails.getQty());
             billingDetails.setGstamount(gst_amount*billingDetails.getQty());
             billingDetails.setGross_amount(actualCostBeforeGstAndDiscount*billingDetails.getQty());
@@ -291,15 +270,10 @@ public class EzbillingBoImpl implements EzbillingBo {
             Double totalamountafterdiscount= billingDetails.getAmount()-percentageUtils.getPercentageAmount(billingDetails.getAmount(),billingDetails.getDisc())-cessAmount;
             Double gross_amount=totalamountafterdiscount - percentageUtils.getPercentageAmount(totalamountafterdiscount,billingDetails.getProduct_gst());
             billingDetails.setTotal_amount(cessAmountAfterDisc+gstAmountAfterDisc+actualCostBeforeGstAndDiscount);
-//            Float gst_amount =billingDetails.getAmount()-gross_amount;
-
-//            billingDetails.setGross_amount(gross_amount*billingDetails.getQty());
             billingDetails.setAmount(billingDetails.getAmount()*billingDetails.getQty());
-
             billingDetails.setAmount_after_disc(billingDetails.getAmount()*billingDetails.getQty());
         }
         List<WayBillDetails> wayBillDetails = calculateWayBillDetails(savedBillDetails);
-        System.out.println("waybill"+wayBillDetails);
 
         savedBillandWayBillDetails.setWayBillDetails(wayBillDetails);
         savedBillandWayBillDetails.setBillingDetails(savedBillDetails);
@@ -416,7 +390,6 @@ public class EzbillingBoImpl implements EzbillingBo {
     @Override
     public List<GstReport> getGstDetailsByDate(String startDate, String endDate) throws ParseException {
         List<GstReport> gstReports = new ArrayList<>();
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
         List<CustomerDetailswithGstNo> customerDetailswithGstNos = customerRepositoryCustom.findGstCustomers();
 
         for (CustomerDetailswithGstNo customerDetailswithGstNo : customerDetailswithGstNos) {
@@ -427,7 +400,6 @@ public class EzbillingBoImpl implements EzbillingBo {
             List<BillNo> billnos = billItemsRepository.findBnoByCnoAndBillingDateBetween(customerDetailswithGstNo.getId(), startDate, endDate);
 
             Map<String, BillGstDetails> billGstDetailsMap = new HashMap<>();
-            System.out.println("billnos.size"+billnos.size());
             for (BillNo bno : billnos) {
                 BillGstDetails billGstDetails = new BillGstDetails();
                 billGstDetails.setSumOfGsts(new ArrayList<>());
@@ -593,9 +565,7 @@ public class EzbillingBoImpl implements EzbillingBo {
         List<BillAmountDetails> billAmountDetails = billAmountRepository.findAll();
         for (BillAmountDetails amountDetails : billAmountDetails
         ){
-            System.out.println("cno"+amountDetails.getCno());
         Customer customer = customerRepository.findByCno(amountDetails.getCno());
-            System.out.println("cusotmer"+customer.getDgst());
         if(customer !=null) {
             amountDetails.setCno(customer.getId());
             billAmountRepository.save(amountDetails);
@@ -617,7 +587,6 @@ public class EzbillingBoImpl implements EzbillingBo {
         for (BillingItemDetails billingDetails : billingDetailsList
         ){
         String convertedDate = convertToISO8601(billingDetails.getBilling_date());
-            System.out.println("convertedDate"+convertedDate);
         if(convertedDate!=null)
         billingDetails.setBilling_date(convertedDate);
 
@@ -628,7 +597,6 @@ public class EzbillingBoImpl implements EzbillingBo {
     }
 
     public static String convertToISO8601(String dateString) {
-        System.out.println("dataString "+dateString);
         DateFormat originalFormat = new SimpleDateFormat("EEE MMM dd HH:mm:ss zzz yyyy");
         originalFormat.setTimeZone(TimeZone.getTimeZone("IST")); // Setting input timezone
         DateFormat targetFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
@@ -667,7 +635,6 @@ public class EzbillingBoImpl implements EzbillingBo {
        for (BillAmountDetails amountDetails :billAmountDetails
             ) {
            Customer customer = customerRepository.findById(amountDetails.getCno()).orElse(null);
-           System.out.println("amountDetails.getCno()"+amountDetails.getCno());
            amountDetails.setCno(customer.getCname());
            billAmountDetailsWithCustomerNames.add(amountDetails);
        }
@@ -727,7 +694,6 @@ public class EzbillingBoImpl implements EzbillingBo {
             billingDetails.setBilling_date(jpaSoldStock.getBillingDate().toString());
             Customer customer = customerRepository.findByCno(jpaSoldStock.getCno().toString());
             billingDetails.setCno(customer.getId());
-            System.out.println("product name"+jpaSoldStock.getProductName());
             ProductDetails productDetails= productRepository.findByPname(jpaSoldStock.getProductName().trim());
             if(productDetails==null){
                 Map<String, String> products = new HashMap<>();
@@ -789,7 +755,7 @@ public class EzbillingBoImpl implements EzbillingBo {
                 products.put("Chips C&N (15stx14p)", "Chips C&N (16st x 14p)");
                 products.put("Parle-G 75/- (16p)", "Parle-G 75/- (14p)");
                 products.put("Chips TT (15stx14p)", "Chips TT (16st x14p)");
-                products.put("A CHICKEN  10/-(50P)", "A CHICKEN 10/-(50P)");
+                products.put("A CHICKEN  \\10/-(50P)", "A CHICKEN 10/-(50P)");
                 products.put("Chips C&S (15stx14p)", "Chips C&S (16st x 14p)");
 
 
@@ -981,4 +947,6 @@ public class EzbillingBoImpl implements EzbillingBo {
         List<SalesPerGST> salesPerGSTS = billingRepositry.getGstSales(cnoOfGstCustomers,fromDate,toDate);
         return  salesPerGSTS;
     }
+
+
 }

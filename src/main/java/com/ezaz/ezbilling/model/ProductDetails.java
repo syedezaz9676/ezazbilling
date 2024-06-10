@@ -26,5 +26,6 @@ public class ProductDetails {
     private String rel_prod;
     private Integer cess;
     private String dgst;
+    private Boolean isEdit;
 
 }
