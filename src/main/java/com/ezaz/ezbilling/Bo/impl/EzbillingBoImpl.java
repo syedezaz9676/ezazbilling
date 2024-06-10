@@ -935,7 +935,6 @@ public class EzbillingBoImpl implements EzbillingBo {
 
     public  List<SalesPerGST> getGstSalesOfGstCustomers(String fromDate, String toDate){
         List<String> cnoOfGstCustomers= customerRepository.findGstCustomerIdsWithGst();
-        System.out.println("cno size"+cnoOfGstCustomers.size());
         List<SalesPerGST> salesPerGSTS = billingRepositry.getGstSales(cnoOfGstCustomers,fromDate,toDate);
         return  salesPerGSTS;
     }
@@ -943,7 +942,6 @@ public class EzbillingBoImpl implements EzbillingBo {
     public  List<SalesPerGST> getGstSalesOfCustomers(String fromDate, String toDate){
 
         List<String> cnoOfGstCustomers= customerRepository.findCustomerIds();
-        System.out.println("cno size"+cnoOfGstCustomers.size());
         List<SalesPerGST> salesPerGSTS = billingRepositry.getGstSales(cnoOfGstCustomers,fromDate,toDate);
         return  salesPerGSTS;
     }
