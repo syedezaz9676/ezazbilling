@@ -37,7 +37,7 @@ public interface EzbillingBo {
 
     public List<Customer> getCustomerByDgst(String dgst);
 
-    public String saveBillItems(List<BillingDetails> billingDetailsList) throws ParseException;
+    public String saveBillItems(List<BillingDetails> billingDetailsList) throws Exception;
 
     public SavedBillandWayBillDetails getSavedBillDetailsByinvoiceNo(String invoiceNo);
 
@@ -76,6 +76,7 @@ public interface EzbillingBo {
     public BalanceDetails getBalanceDetailsById(String id);
     public  List<SalesPerGST> getGstSalesOfGstCustomers(String fromDate, String toDate);
     public  List<SalesPerGST> getGstSalesOfCustomers(String fromDate, String toDate);
+    public List<BillAmountDetails> getBillDetailsByDate(String date,String dgst);
     }
 
 

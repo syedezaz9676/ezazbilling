@@ -121,7 +121,7 @@ public class ezbillingController {
     }
     @CrossOrigin(origins = "http://localhost:8081/")
     @PostMapping("/savebillingdetails")
-    public ResponseEntity<?> savebillingdetails(@RequestBody List<BillingDetails> billDetails) throws ParseException {
+    public ResponseEntity<?> savebillingdetails(@RequestBody List<BillingDetails> billDetails) throws Exception {
         String Invoice= ezbillingBo.saveBillItems(billDetails) ;
         return ResponseEntity.ok(Invoice);
     }
@@ -366,6 +366,13 @@ public class ezbillingController {
     @RequestMapping(value="/getgstsalesofcusotmers", method = RequestMethod.GET)
     public List<SalesPerGST> getSalesofCustomers (@RequestParam("startDate") String startDate, @RequestParam("endDate") String endDate) throws ParseException {
         return ezbillingBo.getGstSalesOfCustomers(startDate,endDate);
+
+    }
+
+    @CrossOrigin(origins = "http://localhost:8081/")
+    @RequestMapping(value="/getbillbydate", method = RequestMethod.GET)
+    public List<BillAmountDetails> getBillByDate (@RequestParam("date") String date, @RequestParam("dgst") String dgst) throws ParseException {
+        return ezbillingBo.getBillDetailsByDate(date,dgst);
 
     }
 

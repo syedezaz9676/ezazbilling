@@ -190,7 +190,7 @@ public class EzbillingBoImpl implements EzbillingBo {
     }
 
     @Override
-    public String saveBillItems(List<BillingDetails> billingDetailsList) throws ParseException {
+    public String saveBillItems(List<BillingDetails> billingDetailsList) throws Exception {
         Double totalBillAmount=0.0;
           BillingDetails firstBillItem = billingDetailsList.get(0);
           BillAmountDetails billAmountDetails= new BillAmountDetails();
@@ -239,8 +239,17 @@ public class EzbillingBoImpl implements EzbillingBo {
         balanceDetails.setTotalBalance(balanceAmount);
         balanceDetails.setLastUpdatedDate(firstBillItem.getBilling_date());
         balanceDetails.setLastUpdateAmount(totalBillAmount);
+        if(firstBillItem.getCno()==null && newInvoiceNo==null){
+            if(firstBillItem.getCno()==null){
+                throw new Exception("no customer id");
+            }
+            if(newInvoiceNo==null){
+                throw new Exception("Invoice number not generated");
+            }
+
+        }
         balanceDetailsRepository.save(balanceDetails);
-        mongodbBackup.BackUp();
+//        mongodbBackup.BackUp();
         return newInvoiceNo;
     }
 
@@ -640,9 +649,23 @@ public class EzbillingBoImpl implements EzbillingBo {
        }
        return billAmountDetailsWithCustomerNames;
    }
+
+    public List<BillAmountDetails> getBillDetailsByDate(String date,String dgst){
+        List<BillAmountDetails> billAmountDetails= billAmountRepository.findByDateAndDgst(date,dgst);
+        List<BillAmountDetails> billAmountDetailsWithCustomerNames= new ArrayList<>();
+        for (BillAmountDetails amountDetails :billAmountDetails
+        ) {
+            Customer customer = customerRepository.findById(amountDetails.getCno()).orElse(null);
+            amountDetails.setCno(customer.getCname());
+            billAmountDetailsWithCustomerNames.add(amountDetails);
+        }
+        return billAmountDetailsWithCustomerNames;
+    }
    public List<SumOfBillsAmount> getSumOfBillsAmount(String date){
         return billingRepositry.getAggregatedResults(date);
    }
+
+
 
    public void copyCustomers(String dgst){
          List<JpaCustomer> jpaCustomers=jpaCustomerRepo.findAll();

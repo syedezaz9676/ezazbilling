@@ -2,6 +2,7 @@ package com.ezaz.ezbilling.Util;
 
 import lombok.experimental.UtilityClass;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.io.BufferedReader;
@@ -17,6 +18,8 @@ public class MongodbBackup {
     String databaseName = "ezbilling";
     String username = "";
     String password = "";
+
+    @Scheduled(cron = "0 0 * * * ?")
     public void BackUp() {
 
 
