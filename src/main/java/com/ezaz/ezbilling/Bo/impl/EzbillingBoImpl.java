@@ -367,26 +367,51 @@ public class EzbillingBoImpl implements EzbillingBo {
             }
             BillAmountDetails billAmountDetails = billAmountRepository.findByBno(firstBillItem.getBno());
             BalanceDetails existingBalanceDetails = balanceDetailsRepository.findByCno(firstBillItem.getCno());
-            existingBalanceDetails.setReason("Invoice Updated");
+            String cusNo= billAmountDetails.getCno();
             Double existingBalance= existingBalanceDetails.getTotalBalance();
-            if(billAmountDetails.getAmount()>totalAmount){
-                existingBalanceDetails.setType("Debit");
-                Double differenceAmount= billAmountDetails.getAmount()-totalAmount;
-                billAmountDetails.setAmount(billAmountDetails.getAmount()-differenceAmount);
+            if(firstBillItem.getCno() == billAmountDetails.getCno()) {
+                existingBalanceDetails.setReason("Invoice Updated");
+                if (billAmountDetails.getAmount() > totalAmount) {
+                    existingBalanceDetails.setType("Debit");
+                    Double differenceAmount = billAmountDetails.getAmount() - totalAmount;
+                    billAmountDetails.setAmount(billAmountDetails.getAmount() - differenceAmount);
+                    billAmountRepository.save(billAmountDetails);
+                    existingBalanceDetails.setTotalBalance(existingBalance - differenceAmount);
+                    existingBalanceDetails.setLastUpdatedDate(firstBillItem.getBilling_date());
+                    existingBalanceDetails.setLastUpdateAmount(differenceAmount);
+                    balanceDetailsRepository.save(existingBalanceDetails);
+                } else if (billAmountDetails.getAmount() < totalAmount) {
+                    existingBalanceDetails.setType("Credit");
+                    Double differenceAmount = totalAmount - billAmountDetails.getAmount();
+                    billAmountDetails.setAmount(billAmountDetails.getAmount() + differenceAmount);
+                    billAmountRepository.save(billAmountDetails);
+                    existingBalanceDetails.setTotalBalance(existingBalance + differenceAmount);
+                    existingBalanceDetails.setLastUpdatedDate(firstBillItem.getBilling_date());
+                    existingBalanceDetails.setLastUpdateAmount(differenceAmount);
+                    balanceDetailsRepository.save(existingBalanceDetails);
+                }
+            }else{
+                billAmountDetails.setCno(firstBillItem.getCno());
+                billAmountDetails.setAmount(totalAmount);
                 billAmountRepository.save(billAmountDetails);
-                existingBalanceDetails.setTotalBalance(existingBalance-differenceAmount);
-                existingBalanceDetails.setLastUpdatedDate(firstBillItem.getBilling_date());
-                existingBalanceDetails.setLastUpdateAmount(differenceAmount);
-                balanceDetailsRepository.save(existingBalanceDetails);
-            }else if(billAmountDetails.getAmount()<totalAmount){
-                existingBalanceDetails.setType("Credit");
-                Double differenceAmount= totalAmount-billAmountDetails.getAmount();
-                billAmountDetails.setAmount(billAmountDetails.getAmount()+differenceAmount);
-                billAmountRepository.save(billAmountDetails);
-                existingBalanceDetails.setTotalBalance(existingBalance+differenceAmount);
-                existingBalanceDetails.setLastUpdatedDate(firstBillItem.getBilling_date());
-                existingBalanceDetails.setLastUpdateAmount(differenceAmount);
-                balanceDetailsRepository.save(existingBalanceDetails);
+
+                BalanceDetails existingBalanceDetailsOfCurrentCus = balanceDetailsRepository.findByCno(cusNo);
+                existingBalanceDetailsOfCurrentCus.setReason("invoice corrected");
+                existingBalanceDetailsOfCurrentCus.setType("Debit");
+                existingBalanceDetailsOfCurrentCus.setLastUpdatedDate(firstBillItem.getBilling_date());
+                existingBalanceDetailsOfCurrentCus.setLastUpdateAmount(totalAmount);
+                existingBalanceDetailsOfCurrentCus.setTotalBalance(existingBalanceDetailsOfCurrentCus.getTotalBalance()-totalAmount);
+                balanceDetailsRepository.save(existingBalanceDetailsOfCurrentCus);
+
+                BalanceDetails existingBalanceDetailsOfUpdatedCus = balanceDetailsRepository.findByCno(firstBillItem.getCno());
+                existingBalanceDetailsOfUpdatedCus.setType("Credit");
+                existingBalanceDetailsOfUpdatedCus.setReason("invoice swapped from "+ existingBalanceDetailsOfCurrentCus);
+                existingBalanceDetailsOfUpdatedCus.setLastUpdateAmount(totalAmount);
+                existingBalanceDetailsOfUpdatedCus.setLastUpdatedDate(firstBillItem.getBilling_date());
+                existingBalanceDetailsOfUpdatedCus.setTotalBalance(existingBalanceDetailsOfUpdatedCus.getTotalBalance()+totalAmount);
+                balanceDetailsRepository.save(existingBalanceDetailsOfUpdatedCus);
+
+
             }
             return firstBillItem.getBno();
         } catch (Exception e) {

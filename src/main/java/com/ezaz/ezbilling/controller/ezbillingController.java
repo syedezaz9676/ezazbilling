@@ -355,6 +355,13 @@ public class ezbillingController {
         mongodbBackup.Restore();
 
     }
+
+    @CrossOrigin(origins = "http://localhost:8081/")
+    @RequestMapping(value="/dobackup", method = RequestMethod.GET)
+    public void backup (){
+        mongodbBackup.BackUp();
+
+    }
     @CrossOrigin(origins = "http://localhost:8081/")
     @RequestMapping(value="/getgstsalesofgstcusotmers", method = RequestMethod.GET)
     public List<SalesPerGST> getSalesofGstCustomers (@RequestParam("startDate") String startDate, @RequestParam("endDate") String endDate) throws ParseException {
