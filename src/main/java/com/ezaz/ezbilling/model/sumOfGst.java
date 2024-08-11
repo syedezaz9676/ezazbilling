@@ -18,4 +18,6 @@ public class sumOfGst {
     private Double sumOfGstAmount;
     private String bno;
     private String billingDate;
+    private Double sumOfCessAmount;
+    private Double netAmount;
 }

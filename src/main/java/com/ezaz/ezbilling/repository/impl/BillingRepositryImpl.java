@@ -63,9 +63,12 @@ public class BillingRepositryImpl  implements BillingRepositry {
         AggregationOperation match = Aggregation.match(org.springframework.data.mongodb.core.query.Criteria.where("bno").is(bno));
         AggregationOperation group = Aggregation.group("product_gst", "bno" ,"billing_date")
                 .sum("amount_after_disc").as("totalAmount")
+                .first("cessAmount").as("totalCessAmount")
                 .first("billing_date").as("billingDate")
                 .first("product_gst").as("product_gst")
                 .first("bno").as("bno")
+                .first("netAmount").as("netAmount")
+                .first("cess").as("cess")
                 ;
 
 
@@ -89,16 +92,20 @@ public class BillingRepositryImpl  implements BillingRepositry {
                 Aggregation.group("hsn_code")
                         .addToSet("hsn_code").as("hsn_code") // Group by HSN code
                         .first("product_gst").as("product_gst") // Take the first product GST value encountered
-                        .sum("amount_after_disc").as("totalAmount") // Sum the total amount after discount
+                        .sum("amount_after_disc").as("totalAmount")
+                        .sum("netAmount").as("totalNetAmount")
+                        .sum("cessAmount").as("totalCessAmount")/// Sum the total amount after discount
                         .sum("qty").as("totalQty"), // Sum the total quantity
-                Aggregation.project("hsn_code", "totalAmount", "totalQty", "product_gst"), // Reproject fields
+                Aggregation.project("hsn_code", "totalAmount", "totalQty", "product_gst","totalCessAmount","totalNetAmount"), // Reproject fields
                 Aggregation.project()
-                        .andExpression("totalAmount-((totalAmount/(product_gst+100))*100)").as("taxAmount") // Calculate the tax amount
-                        .andExpression("(totalAmount/(product_gst+100))*100").as("taxableAmount")
+                         // Calculate the tax amount
+                        .andExpression("totalNetAmount").as("taxableAmount")
+                        .andExpression("(totalNetAmount/100)*product_gst").as("taxAmount")
                         .and("hsn_code").as("hsn_code")
                         .and("totalAmount").as("totalAmount")
                         .and("totalQty").as("totalQty")
                         .and("product_gst").as("product_gst")
+                        .and("totalCessAmount").as("totalCessAmount")
         );
 
         AggregationResults<SoldStockSummary> results = mongoTemplate.aggregate(aggregation, "soldstock", SoldStockSummary.class); // Execute aggregation pipeline
@@ -113,16 +120,19 @@ public class BillingRepositryImpl  implements BillingRepositry {
                 Aggregation.group("hsn_code")
                         .addToSet("hsn_code").as("hsn_code") // Group by HSN code
                         .first("product_gst").as("product_gst") // Take the first product GST value encountered
-                        .sum("amount_after_disc").as("totalAmount") // Sum the total amount after discount
+                        .sum("amount_after_disc").as("totalAmount")
+                        .sum("netAmount").as("totalNetAmount")
+                        .sum("cessAmount").as("totalCessAmount")// Sum the total amount after discount
                         .sum("qty").as("totalQty"), // Sum the total quantity
-                Aggregation.project("hsn_code", "totalAmount", "totalQty", "product_gst"), // Reproject fields
+                Aggregation.project("hsn_code", "totalAmount", "totalQty", "product_gst","totalNetAmount","totalCessAmount"), // Reproject fields
                 Aggregation.project()
-                        .andExpression("(totalAmount/(product_gst+100))*100").as("igst") // Calculate the tax amount
-                        .andExpression("totalAmount-((totalAmount/(product_gst+100))*100)").as("taxableAmount")
+                        .andExpression("(totalNetAmount/100)*product_gst").as("igst") // Calculate the tax amount
+                        .andExpression("totalNetAmount").as("taxableAmount")
                         .and("hsn_code").as("hsn_code")
                         .and("totalAmount").as("totalAmount")
                         .and("totalQty").as("totalQty")
                         .and("product_gst").as("product_gst")
+                        .and("totalCessAmount").as("totalCessAmount")
         );
 
         AggregationResults<SoldStockSummary> results = mongoTemplate.aggregate(aggregation, "soldstock", SoldStockSummary.class); // Execute aggregation pipeline

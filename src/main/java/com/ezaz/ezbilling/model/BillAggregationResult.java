@@ -17,8 +17,11 @@ import java.util.Date;
 public class BillAggregationResult {
 
     private double totalAmount;
+    private double totalCessAmount;
     private Integer product_gst;
     private String billingDate;
     private String bno;
+    private double netAmount;
+    private Integer cess;
 
 }

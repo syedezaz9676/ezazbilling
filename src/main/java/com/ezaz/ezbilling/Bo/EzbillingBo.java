@@ -77,6 +77,7 @@ public interface EzbillingBo {
     public  List<SalesPerGST> getGstSalesOfGstCustomers(String fromDate, String toDate);
     public  List<SalesPerGST> getGstSalesOfCustomers(String fromDate, String toDate);
     public List<BillAmountDetails> getBillDetailsByDate(String date,String dgst);
+    public void addCessandNetAmount(String date) throws ParseException;
     }
 
 

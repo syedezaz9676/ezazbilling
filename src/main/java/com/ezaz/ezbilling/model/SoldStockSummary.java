@@ -21,6 +21,10 @@ public class SoldStockSummary {
     private double sgst;
     private double cgst;
     private double igst;
+    private double totalCessAmount;
+    private double totalNetAmount;
+
+//    public double getTaxableAmount(){return (totalAmount/((product_gst)+100))*100;}
 
     public double getSgst() {
         return taxAmount/2;
@@ -29,4 +33,6 @@ public class SoldStockSummary {
     public double getCgst(){
         return taxAmount/2;
     }
+
+//    public double getTaxAmount(){return taxableAmount-((taxableAmount/(product_gst+100))*100);}
 }

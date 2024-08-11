@@ -43,6 +43,7 @@ public class BillingDetails {
     private Double total_tax;
     private Double total_gross;
     private Double total_amount;
+    private Double netAmount;
 
 
     public String getBilling_date() {

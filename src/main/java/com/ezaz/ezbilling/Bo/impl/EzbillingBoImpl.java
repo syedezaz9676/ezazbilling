@@ -224,6 +224,13 @@ public class EzbillingBoImpl implements EzbillingBo {
             newStockDetails.setIn_stock_units(stockDetails.getIn_stock_units()-billingDetails.getQty());
             stockRepository.updateBillItemInStock(newStockDetails);
 
+            ProductDetails productDetails= productRepository.findById(billingDetails.getProduct_name()).orElse(null);
+            float deductablePer=billingDetails.getProduct_gst()+productDetails.getCess();
+            Double rateAfter = (billingDetails.getAmount()/((deductablePer)+100))*100;
+            Double cessAmount= percentageUtils.getPercentageAmount(rateAfter,productDetails.getCess());
+               billingDetails.setCess(productDetails.getCess());
+               billingDetails.setNetAmount(rateAfter*billingDetails.getQty());
+               billingDetails.setCessAmount(cessAmount*billingDetails.getQty());
                billingDetails.setBilling_date(billingDetails.getBilling_date().substring(0,10));
                billingDetails.setBno(newInvoiceNo);
                billingDetails.setAmount_after_disc((billingDetails.getAmount()*billingDetails.getQty()));
@@ -265,22 +272,25 @@ public class EzbillingBoImpl implements EzbillingBo {
             ProductDetails productDetails = productRepository.findById(billingDetails.getProduct_name()).orElse(null);
             billingDetails.setProduct_name(productDetails.getPname());
             billingDetails.setCess(productDetails.getCess());
-            Double rateAfter = (billingDetails.getAmount()/(productDetails.getVatp()+100))*100;
-            Double cessAmount= percentageUtils.getPercentageAmount(rateAfter,productDetails.getCess());
+            float per =productDetails.getVatp()+productDetails.getCess();
+            Double rateAfter = (billingDetails.getAmount()/((per)+100))*100;
+//            Double cessAmount= percentageUtils.getPercentageAmount(rateAfter,productDetails.getCess());
+            Double cessAmount= billingDetails.getCessAmount();
             Double gst_amount =percentageUtils.getPercentageAmount(rateAfter,productDetails.getVatp());
             Double actualCostBeforeGstAndDiscount = billingDetails.getAmount()-(cessAmount+gst_amount);
             Double actualAmountAfterDisc= actualCostBeforeGstAndDiscount - percentageUtils.getPercentageAmount(actualCostBeforeGstAndDiscount,billingDetails.getDisc());
-            Double cessAmountAfterDisc= percentageUtils.getPercentageAmount(actualAmountAfterDisc,productDetails.getCess())*billingDetails.getQty();
-            Double gstAmountAfterDisc=percentageUtils.getPercentageAmount(actualAmountAfterDisc,productDetails.getVatp())*billingDetails.getQty();
-            billingDetails.setCessAmount(cessAmount*billingDetails.getQty());
+            Double cessAmountAfterDisc= percentageUtils.getPercentageAmount(rateAfter,productDetails.getCess())*billingDetails.getQty();
+            Double gstAmountAfterDisc=percentageUtils.getPercentageAmount(rateAfter,productDetails.getVatp())*billingDetails.getQty();
+            billingDetails.setCessAmount(cessAmount);
             billingDetails.setGstamount(gst_amount*billingDetails.getQty());
-            billingDetails.setGross_amount(actualCostBeforeGstAndDiscount*billingDetails.getQty());
+            billingDetails.setGross_amount(rateAfter*billingDetails.getQty());
             billingDetails.setRate(billingDetails.getAmount());
             Double totalamountafterdiscount= billingDetails.getAmount()-percentageUtils.getPercentageAmount(billingDetails.getAmount(),billingDetails.getDisc())-cessAmount;
             Double gross_amount=totalamountafterdiscount - percentageUtils.getPercentageAmount(totalamountafterdiscount,billingDetails.getProduct_gst());
-            billingDetails.setTotal_amount(cessAmountAfterDisc+gstAmountAfterDisc+actualCostBeforeGstAndDiscount);
+            billingDetails.setTotal_amount((rateAfter+gst_amount+cessAmount)*billingDetails.getQty());
             billingDetails.setAmount(billingDetails.getAmount()*billingDetails.getQty());
-            billingDetails.setAmount_after_disc(billingDetails.getAmount()*billingDetails.getQty());
+//            billingDetails.setAmount((rateAfter+gst_amount+cessAmount)*billingDetails.getQty());
+            billingDetails.setAmount_after_disc((rateAfter+gst_amount+cessAmount)*billingDetails.getQty());
         }
         List<WayBillDetails> wayBillDetails = calculateWayBillDetails(savedBillDetails);
 
@@ -354,6 +364,8 @@ public class EzbillingBoImpl implements EzbillingBo {
                     }
 
                 } else {
+
+
                     StockDetails stockDetails = getStockItemDetails(billingDetails.getProduct_name());
 
                     StockDetails newStockDetails = new StockDetails();
@@ -361,7 +373,28 @@ public class EzbillingBoImpl implements EzbillingBo {
                     newStockDetails.setIn_stock_units(stockDetails.getIn_stock_units()-billingDetails.getQty());
                     stockRepository.updateBillItemInStock(newStockDetails);
                 }
+                for (BillingDetails savedDetail : savedBillDetails) {
+                    Optional<BillingDetails> result1 = billingDetailsList.stream()
+                            .filter(billingDetails1 -> billingDetails1.getProduct_name().equals(savedDetail.getProduct_name()))
+                            .findFirst();
+                    if(!result1.isPresent()){
+                        StockDetails stockDetails = getStockItemDetails(savedDetail.getProduct_name());
+                        StockDetails newStockDetails = new StockDetails();
+                        newStockDetails.set_id(stockDetails.get_id());
+                        newStockDetails.setIn_stock_units(stockDetails.getIn_stock_units()+billingDetails.getQty());
+                        stockRepository.updateBillItemInStock(newStockDetails);
+                    }
+
+                }
+
                 billingDetails.setAmount_after_disc(billingDetails.getAmount() * billingDetails.getQty());
+                ProductDetails productDetails= productRepository.findById(billingDetails.getProduct_name()).orElse(null);
+                float deductablePer =billingDetails.getProduct_gst()+productDetails.getCess();
+                Double rateAfter = (billingDetails.getAmount()/((deductablePer)+100))*100;
+                billingDetails.setCess(productDetails.getCess());
+                billingDetails.setNetAmount(rateAfter*billingDetails.getQty());
+                Double cessAmount= percentageUtils.getPercentageAmount(rateAfter,productDetails.getCess());
+                billingDetails.setCessAmount(cessAmount*billingDetails.getQty());
                 billItemsRepository.save(billingDetails);
                 totalAmount=totalAmount+billingDetails.getAmount() * billingDetails.getQty();
             }
@@ -369,7 +402,7 @@ public class EzbillingBoImpl implements EzbillingBo {
             BalanceDetails existingBalanceDetails = balanceDetailsRepository.findByCno(firstBillItem.getCno());
             String cusNo= billAmountDetails.getCno();
             Double existingBalance= existingBalanceDetails.getTotalBalance();
-            if(firstBillItem.getCno() == billAmountDetails.getCno()) {
+            if(firstBillItem.getCno().equals(billAmountDetails.getCno())) {
                 existingBalanceDetails.setReason("Invoice Updated");
                 if (billAmountDetails.getAmount() > totalAmount) {
                     existingBalanceDetails.setType("Debit");
@@ -405,7 +438,7 @@ public class EzbillingBoImpl implements EzbillingBo {
 
                 BalanceDetails existingBalanceDetailsOfUpdatedCus = balanceDetailsRepository.findByCno(firstBillItem.getCno());
                 existingBalanceDetailsOfUpdatedCus.setType("Credit");
-                existingBalanceDetailsOfUpdatedCus.setReason("invoice swapped from "+ existingBalanceDetailsOfCurrentCus);
+                existingBalanceDetailsOfUpdatedCus.setReason("invoice swapped from "+ existingBalanceDetailsOfCurrentCus.getCname());
                 existingBalanceDetailsOfUpdatedCus.setLastUpdateAmount(totalAmount);
                 existingBalanceDetailsOfUpdatedCus.setLastUpdatedDate(firstBillItem.getBilling_date());
                 existingBalanceDetailsOfUpdatedCus.setTotalBalance(existingBalanceDetailsOfUpdatedCus.getTotalBalance()+totalAmount);
@@ -448,12 +481,16 @@ public class EzbillingBoImpl implements EzbillingBo {
                 for (BillAggregationResult billAggregationResult : billAggregationResults) {
                     sumOfGst sumOfGst = new sumOfGst();
                     sumOfGst.setGst(billAggregationResult.getProduct_gst());
-                    sumOfGst.setSumOfGstAmount(((billAggregationResult.getTotalAmount()/(billAggregationResult.getProduct_gst()+100))*100.0));
+                    Double rateAfter = (billAggregationResult.getNetAmount());
+//                    rateAfter =rateAfter-billAggregationResult.getTotalCessAmount();
+                    sumOfGst.setSumOfGstAmount(((rateAfter/(billAggregationResult.getProduct_gst()+100))*100.0));
+                    sumOfGst.setSumOfGstAmount(rateAfter);
                     sumOfGst.setBno(billAggregationResult.getBno());
                     sumOfGst.setBillingDate(billAggregationResult.getBillingDate());
+                    sumOfGst.setSumOfCessAmount(billAggregationResult.getTotalCessAmount());
 
                     // Calculate taxable amount by subtracting GST amount from total amount
-                    Double taxableAmount = ((billAggregationResult.getTotalAmount()/(billAggregationResult.getProduct_gst()+100))*100.0);
+                    Double taxableAmount = rateAfter;
 
                     // Check if the current GST value has already been added for this BillGstDetails
                     if (!addedGstValues.contains(sumOfGst.getGst())) {
@@ -992,6 +1029,37 @@ public class EzbillingBoImpl implements EzbillingBo {
         List<String> cnoOfGstCustomers= customerRepository.findCustomerIds();
         List<SalesPerGST> salesPerGSTS = billingRepositry.getGstSales(cnoOfGstCustomers,fromDate,toDate);
         return  salesPerGSTS;
+    }
+
+    public void addCessandNetAmount(String date) throws ParseException {
+        List<BillingDetails> billingDetailsList = new ArrayList<>();
+        billingDetailsList=billItemsRepository.findAll();
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+        Date startDate= formatter.parse(date);
+        for (BillingDetails billingDetails:billingDetailsList
+             ) {
+               Date billingDate= formatter.parse(billingDetails.getBilling_date());
+               if(billingDate.after(startDate)){
+                   ProductDetails productDetails = productRepository.findById(billingDetails.getProduct_name()).orElse(null);
+                   float per =productDetails.getVatp()+productDetails.getCess();
+                   Double netAmount = (billingDetails.getAmount_after_disc()/((per)+100))*100;
+                   Double cessAmount= percentageUtils.getPercentageAmount(netAmount,productDetails.getCess());
+                   billingDetails.setNetAmount(netAmount);
+                   billingDetails.setCessAmount(cessAmount);
+                   billingDetails.setCess(productDetails.getCess());
+                   billItemsRepository.save(billingDetails);
+               }
+               else{
+                   Double netAmount = (billingDetails.getAmount_after_disc()/((billingDetails.getProduct_gst())+100))*100;
+                   billingDetails.setNetAmount(netAmount);
+                   billingDetails.setCessAmount(0.00);
+                   billingDetails.setCess(0);
+                   billItemsRepository.save(billingDetails);
+               }
+        }
+
+
+
     }
 
 
