@@ -482,15 +482,10 @@ public class EzbillingBoImpl implements EzbillingBo {
                     sumOfGst sumOfGst = new sumOfGst();
                     sumOfGst.setGst(billAggregationResult.getProduct_gst());
                     Double rateAfter = (billAggregationResult.getNetAmount());
-//                    rateAfter =rateAfter-billAggregationResult.getTotalCessAmount();
-                    sumOfGst.setSumOfGstAmount(((rateAfter/(billAggregationResult.getProduct_gst()+100))*100.0));
                     sumOfGst.setSumOfGstAmount(rateAfter);
                     sumOfGst.setBno(billAggregationResult.getBno());
                     sumOfGst.setBillingDate(billAggregationResult.getBillingDate());
                     sumOfGst.setSumOfCessAmount(billAggregationResult.getTotalCessAmount());
-
-                    // Calculate taxable amount by subtracting GST amount from total amount
-                    Double taxableAmount = rateAfter;
 
                     // Check if the current GST value has already been added for this BillGstDetails
                     if (!addedGstValues.contains(sumOfGst.getGst())) {
@@ -498,7 +493,7 @@ public class EzbillingBoImpl implements EzbillingBo {
 
                         billGstDetails.getSumOfGsts().add(sumOfGst);
                         totalSum += billAggregationResult.getTotalAmount(); // Calculate total sum of GST amounts
-                        totalTaxableSum += taxableAmount; // Calculate total taxable sum
+                        totalTaxableSum += rateAfter; // Calculate total taxable sum
                     }
                 }
 

@@ -67,7 +67,7 @@ public class BillingRepositryImpl  implements BillingRepositry {
                 .first("billing_date").as("billingDate")
                 .first("product_gst").as("product_gst")
                 .first("bno").as("bno")
-                .first("netAmount").as("netAmount")
+                .sum("netAmount").as("netAmount")
                 .first("cess").as("cess")
                 ;
 
