@@ -3,10 +3,8 @@ package com.ezaz.ezbilling.controller;
 import com.ezaz.ezbilling.Bo.EzbillingBo;
 import com.ezaz.ezbilling.Util.MongodbBackup;
 import com.ezaz.ezbilling.model.*;
-import com.ezaz.ezbilling.model.mysql.JpaCustomer;
 import com.ezaz.ezbilling.repository.BillingRepositry;
 import com.ezaz.ezbilling.repository.CompanyRepository;
-import org.aspectj.apache.bcel.classfile.Constant;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -391,6 +389,13 @@ public class ezbillingController {
     public String addCessDetails (@RequestParam("date") String date) throws ParseException {
         ezbillingBo.addCessandNetAmount(date);
         return "Done";
+
+    }
+
+    @CrossOrigin(origins = URL)
+    @RequestMapping(value="/sixmonthssale", method = RequestMethod.GET)
+    public List<MonthlySales> getSixMontsSale ()  {
+        return ezbillingBo.getSixMonthsSale();
 
     }
 

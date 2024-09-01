@@ -1,11 +1,9 @@
 package com.ezaz.ezbilling.repository;
 
 import com.ezaz.ezbilling.model.*;
-import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDate;
 import java.util.Date;
 import java.util.List;
 
@@ -31,5 +29,5 @@ public interface BillingRepositry   {
     public void addDgst(String dgst);
     public List<SumOfBillsAmount> getAggregatedResults(String billingDate);
     public List<SalesPerGST> getGstSales(List<String> cnos, String startDate, String endDate);
-
+    public List<MonthlySales> getSumOfAmountAfterDiscForLastSixMonths();
 }

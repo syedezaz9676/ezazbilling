@@ -1,7 +1,6 @@
 package com.ezaz.ezbilling.Bo;
 
 import com.ezaz.ezbilling.model.*;
-import com.ezaz.ezbilling.model.mysql.JpaCustomer;
 
 import java.text.ParseException;
 import java.util.List;
@@ -78,6 +77,7 @@ public interface EzbillingBo {
     public  List<SalesPerGST> getGstSalesOfCustomers(String fromDate, String toDate);
     public List<BillAmountDetails> getBillDetailsByDate(String date,String dgst);
     public void addCessandNetAmount(String date) throws ParseException;
+    public List<MonthlySales> getSixMonthsSale();
     }
 
 

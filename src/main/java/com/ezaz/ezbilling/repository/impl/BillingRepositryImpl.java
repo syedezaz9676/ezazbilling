@@ -12,10 +12,12 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Repository;
-import static org.springframework.data.mongodb.core.query.Query.query;
-import static org.springframework.data.mongodb.core.query.Update.update;
 
+import static org.springframework.data.mongodb.core.query.Criteria.where;
+
+import java.time.LocalDate;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -39,7 +41,7 @@ public class BillingRepositryImpl  implements BillingRepositry {
         final Query query = new Query()
                 .limit(1)
                 .with(Sort.by(Sort.Direction.DESC, "bno"));
-        query.addCriteria(Criteria.where("dgst").is(dgst));
+        query.addCriteria(where("dgst").is(dgst));
         return mongoTemplate.findOne(query, BillingDetails.class);
     }
 
@@ -47,7 +49,7 @@ public class BillingRepositryImpl  implements BillingRepositry {
     @Override
 
     public List<String> findBnoByCnoAndBillingDateBetween(String cno, Date startDate, Date endDate) {
-        Query query = new Query(Criteria.where("cno").is(cno)
+        Query query = new Query(where("cno").is(cno)
                 .and("billing_date").gte(startDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate()).lte(endDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate()));
 
         List<String> bnos = mongoTemplate.findDistinct(query, "bno", BillingDetails.class, String.class);
@@ -60,7 +62,7 @@ public class BillingRepositryImpl  implements BillingRepositry {
     public List<BillAggregationResult> getGstDetails(String bno) {
         List<BillAggregationResult> gstDetailsList = new ArrayList<>();
 
-        AggregationOperation match = Aggregation.match(org.springframework.data.mongodb.core.query.Criteria.where("bno").is(bno));
+        AggregationOperation match = Aggregation.match(where("bno").is(bno));
         AggregationOperation group = Aggregation.group("product_gst", "bno" ,"billing_date")
                 .sum("amount_after_disc").as("totalAmount")
                 .first("cessAmount").as("totalCessAmount")
@@ -87,8 +89,8 @@ public class BillingRepositryImpl  implements BillingRepositry {
 
         List<String> customerNumbers = customerRepository.findGstCustomerIdsWithoutIgst();
         Aggregation aggregation = Aggregation.newAggregation(
-                Aggregation.match(Criteria.where("billing_date").gte(startDate).lte(endDate)), // Filtering based on billing date
-                Aggregation.match(Criteria.where("cno").in(customerNumbers)), // Filter based on cnoList
+                Aggregation.match(where("billing_date").gte(startDate).lte(endDate)), // Filtering based on billing date
+                Aggregation.match(where("cno").in(customerNumbers)), // Filter based on cnoList
                 Aggregation.group("hsn_code")
                         .addToSet("hsn_code").as("hsn_code") // Group by HSN code
                         .first("product_gst").as("product_gst") // Take the first product GST value encountered
@@ -115,8 +117,8 @@ public class BillingRepositryImpl  implements BillingRepositry {
     public List<SoldStockSummary> getSoldStockSummary(String startDate, String endDate) {
         List<String> customerNumbers = customerRepository.findGstCustomerIdsWithIgst();
         Aggregation aggregation = Aggregation.newAggregation(
-                Aggregation.match(Criteria.where("billing_date").gte(startDate).lte(endDate)), // Filtering based on billing date
-                Aggregation.match(Criteria.where("cno").in(customerNumbers)), // Filter based on cnoList
+                Aggregation.match(where("billing_date").gte(startDate).lte(endDate)), // Filtering based on billing date
+                Aggregation.match(where("cno").in(customerNumbers)), // Filter based on cnoList
                 Aggregation.group("hsn_code")
                         .addToSet("hsn_code").as("hsn_code") // Group by HSN code
                         .first("product_gst").as("product_gst") // Take the first product GST value encountered
@@ -141,7 +143,7 @@ public class BillingRepositryImpl  implements BillingRepositry {
 
     public List<CompanyBillingSummary> getCompanyBillingSummary(String startDate, String endDate) {
         Aggregation aggregation = Aggregation.newAggregation(
-                Aggregation.match(Criteria.where("billing_date").gte(startDate).lte(endDate)),
+                Aggregation.match(where("billing_date").gte(startDate).lte(endDate)),
                 Aggregation.group("product_company")
                         .sum("amount_after_disc").as("totalAmount")
                         .first("product_company").as("product_company")
@@ -157,7 +159,7 @@ public class BillingRepositryImpl  implements BillingRepositry {
     public List<BillingDetails> getBillingDetailsByPname(String pname){
         List<BillingDetails>  billingDetailsList = new ArrayList<>();
 
-        AggregationOperation match = Aggregation.match(org.springframework.data.mongodb.core.query.Criteria.where("product_name").is(pname));
+        AggregationOperation match = Aggregation.match(where("product_name").is(pname));
 
 
 
@@ -191,7 +193,7 @@ public class BillingRepositryImpl  implements BillingRepositry {
 
     public void addDgst(String dgst) {
         Query query = new Query();
-        query.addCriteria(Criteria.where("dgst").exists(false));
+        query.addCriteria(where("dgst").exists(false));
 
         Update update = new Update();
         update.set("dgst", dgst);
@@ -202,7 +204,7 @@ public class BillingRepositryImpl  implements BillingRepositry {
 
     public List<SumOfBillsAmount> getAggregatedResults(String billingDate) {
         Aggregation aggregation = Aggregation.newAggregation(
-                Aggregation.match(Criteria.where("billing_date").is(billingDate)),
+                Aggregation.match(where("billing_date").is(billingDate)),
                 Aggregation.group("bno", "billing_date")
                         .sum("amount_after_disc").as("amount")
                         .first("bno").as("bno")
@@ -218,9 +220,9 @@ public class BillingRepositryImpl  implements BillingRepositry {
 
     public List<SalesPerGST> getGstSales(List<String> cnos, String startDate, String endDate) {
         Aggregation aggregation = Aggregation.newAggregation(
-                Aggregation.match(Criteria.where("cno").in(cnos)
-                        .andOperator(Criteria.where("billing_date").gte(startDate),
-                                Criteria.where("billing_date").lte(endDate))),
+                Aggregation.match(where("cno").in(cnos)
+                        .andOperator(where("billing_date").gte(startDate),
+                                where("billing_date").lte(endDate))),
                 Aggregation.group("product_gst")
                         .sum("amount_after_disc").as("totalAmountAfterDisc")
                         .first("product_gst").as("productGst")
@@ -228,6 +230,33 @@ public class BillingRepositryImpl  implements BillingRepositry {
         );
 
         AggregationResults<SalesPerGST> results = mongoTemplate.aggregate(aggregation, "soldstock", SalesPerGST.class);
+        return results.getMappedResults();
+    }
+
+    public List<MonthlySales> getSumOfAmountAfterDiscForLastSixMonths() {
+        LocalDate sixMonthsAgo = LocalDate.now().minusMonths(6);
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
+        Aggregation aggregation = Aggregation.newAggregation(
+                // Match billing_date within the last 6 months
+                Aggregation.match(Criteria.where("billing_date").gte(sixMonthsAgo.format(formatter))),
+
+                // Extract the year and month (yyyy-mm) from billingDate
+                Aggregation.project()
+                        .andExpression("substr(billing_date, 0, 7)").as("monthYear")
+                        .and("amount_after_disc").as("amountAfterDisc")
+                ,
+
+                // Group by the extracted monthYear and sum the amounts
+                Aggregation.group("monthYear")
+                        .sum("amountAfterDisc").as("totalAmount")
+
+
+        );
+
+        // Execute the aggregation query on the soldstock collection
+        AggregationResults<MonthlySales> results = mongoTemplate.aggregate(aggregation, "soldstock", MonthlySales.class);
+
         return results.getMappedResults();
     }
 }

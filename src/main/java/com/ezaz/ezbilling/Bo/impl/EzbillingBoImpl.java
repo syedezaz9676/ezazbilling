@@ -28,6 +28,23 @@ import java.util.stream.Stream;
 @Service
 public class EzbillingBoImpl implements EzbillingBo {
 
+//    private static final Map<Integer, String> monthMap = new HashMap<>();
+//
+//    static {
+//        monthMap.put(1, "January");
+//        monthMap.put(2, "February");
+//        monthMap.put(3, "March");
+//        monthMap.put(4, "April");
+//        monthMap.put(5, "May");
+//        monthMap.put(6, "June");
+//        monthMap.put(7, "July");
+//        monthMap.put(8, "August");
+//        monthMap.put(9, "September");
+//        monthMap.put(10, "October");
+//        monthMap.put(11, "November");
+//        monthMap.put(12, "December");
+//    }
+
     @Autowired
     private MongoTemplate mongoTemplate;
 
@@ -1056,6 +1073,54 @@ public class EzbillingBoImpl implements EzbillingBo {
 
 
     }
+    public List<MonthlySales> getSixMonthsSale() {
+        List<MonthlySales> monthlySales = billingRepositry.getSumOfAmountAfterDiscForLastSixMonths();
 
+        // Month number to name map
+        Map<Integer, String> monthMap = new HashMap<>();
+        monthMap.put(1, "January");
+        monthMap.put(2, "February");
+        monthMap.put(3, "March");
+        monthMap.put(4, "April");
+        monthMap.put(5, "May");
+        monthMap.put(6, "June");
+        monthMap.put(7, "July");
+        monthMap.put(8, "August");
+        monthMap.put(9, "September");
+        monthMap.put(10, "October");
+        monthMap.put(11, "November");
+        monthMap.put(12, "December");
+
+        // Name to month number map for sorting
+        Map<String, Integer> monthNumberMap = monthMap.entrySet()
+                .stream()
+                .collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
+
+        List<MonthlySales> transformedAndSortedSales = monthlySales.stream()
+                .map(sales -> {
+                    String id = sales.getId();
+                    String newId = id; // Initialize newId with the original id
+
+                    try {
+                        if (id.length() >= 2) {
+                            int monthNumber = Integer.parseInt(id.substring(id.length() - 2));
+                            if (monthNumber >= 1 && monthNumber <= 12) {
+                                String month = monthMap.get(monthNumber);
+                                newId = month != null ? month : newId; // Use monthMap or keep original id
+                            }
+                        }
+                    } catch (NumberFormatException e) {
+                        // Log or handle the exception if needed
+                        System.err.println("Invalid ID format: " + id);
+                    }
+
+                    // Create a new MonthlySales object with the updated id
+                    return new MonthlySales(newId, sales.getTotalAmount()); // Adjust constructor if needed
+                })
+                .sorted(Comparator.comparingInt(sales -> monthNumberMap.getOrDefault(sales.getId(), 0)))
+                .collect(Collectors.toList());
+
+        return transformedAndSortedSales;
+    }
 
 }
