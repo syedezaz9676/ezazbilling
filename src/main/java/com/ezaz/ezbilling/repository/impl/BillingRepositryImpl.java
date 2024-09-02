@@ -234,7 +234,7 @@ public class BillingRepositryImpl  implements BillingRepositry {
     }
 
     public List<MonthlySales> getSumOfAmountAfterDiscForLastSixMonths() {
-        LocalDate sixMonthsAgo = LocalDate.now().minusMonths(6);
+        LocalDate sixMonthsAgo = LocalDate.now().minusMonths(13);
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
         Aggregation aggregation = Aggregation.newAggregation(

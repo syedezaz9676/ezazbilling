@@ -1091,36 +1091,52 @@ public class EzbillingBoImpl implements EzbillingBo {
         monthMap.put(11, "November");
         monthMap.put(12, "December");
 
-        // Name to month number map for sorting
-        Map<String, Integer> monthNumberMap = monthMap.entrySet()
-                .stream()
-                .collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
-
         List<MonthlySales> transformedAndSortedSales = monthlySales.stream()
                 .map(sales -> {
                     String id = sales.getId();
                     String newId = id; // Initialize newId with the original id
 
                     try {
-                        if (id.length() >= 2) {
-                            int monthNumber = Integer.parseInt(id.substring(id.length() - 2));
+                        // Parse the year and month from the id
+                        String[] parts = id.split("-");
+                        if (parts.length == 2) {
+                            int year = Integer.parseInt(parts[0]);
+                            int monthNumber = Integer.parseInt(parts[1]);
+
                             if (monthNumber >= 1 && monthNumber <= 12) {
                                 String month = monthMap.get(monthNumber);
-                                newId = month != null ? month : newId; // Use monthMap or keep original id
+                                newId = month + " " + year; // Format newId as "Month Year"
                             }
                         }
                     } catch (NumberFormatException e) {
-                        // Log or handle the exception if needed
-                        System.err.println("Invalid ID format: " + id);
+                        // Log or handle the exception with more context
+                        System.err.println("Invalid ID format for sales: " + sales);
                     }
 
                     // Create a new MonthlySales object with the updated id
                     return new MonthlySales(newId, sales.getTotalAmount()); // Adjust constructor if needed
                 })
-                .sorted(Comparator.comparingInt(sales -> monthNumberMap.getOrDefault(sales.getId(), 0)))
+                .sorted(Comparator.comparing(sales -> {
+                    String[] parts = sales.getId().split(" ");
+                    int year = 0;
+                    int monthNumber = 0;
+
+                    if (parts.length == 2) {
+                        String monthName = parts[0];
+                        year = Integer.parseInt(parts[1]);
+                        monthNumber = monthMap.entrySet()
+                                .stream()
+                                .filter(entry -> entry.getValue().equals(monthName))
+                                .map(Map.Entry::getKey)
+                                .findFirst()
+                                .orElse(0);
+                    }
+                    return LocalDate.of(year, monthNumber, 1);
+                }))
                 .collect(Collectors.toList());
 
         return transformedAndSortedSales;
     }
+
 
 }
