@@ -399,4 +399,11 @@ public class ezbillingController {
 
     }
 
+    @CrossOrigin(origins = URL)
+    @RequestMapping(value="/getcompanymonthlysales", method = RequestMethod.GET)
+    public List<MonthlySales> getCompanyMonthlySales (@RequestParam("company") String company, @RequestParam("months") int months) throws ParseException {
+        return ezbillingBo.getSixMonthsSaleForCompanies(company,months);
+
+    }
+
 }

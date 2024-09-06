@@ -30,4 +30,5 @@ public interface BillingRepositry   {
     public List<SumOfBillsAmount> getAggregatedResults(String billingDate);
     public List<SalesPerGST> getGstSales(List<String> cnos, String startDate, String endDate);
     public List<MonthlySales> getSumOfAmountAfterDiscForLastSixMonths();
+    public List<MonthlySales> getSumOfAmountAfterDiscForLastSixMonthsPerCompany(String productCompany,int noOfMonths);
 }

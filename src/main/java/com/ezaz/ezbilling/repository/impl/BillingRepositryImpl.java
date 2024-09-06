@@ -259,5 +259,34 @@ public class BillingRepositryImpl  implements BillingRepositry {
 
         return results.getMappedResults();
     }
+
+    public List<MonthlySales> getSumOfAmountAfterDiscForLastSixMonthsPerCompany(String productCompany,int noOfMonths) {
+        // Get the date from six months ago
+        LocalDate sixMonthsAgo = LocalDate.now().minusMonths(noOfMonths);
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
+        // Define the aggregation query
+        Aggregation aggregation = Aggregation.newAggregation(
+                // Match billing_date within the last 6 months and filter by product_company
+                Aggregation.match(Criteria.where("billing_date").gte(sixMonthsAgo.format(formatter))
+                        .and("product_company").is(productCompany)),
+
+                // Extract the year and month (yyyy-MM) from billing_date
+                Aggregation.project()
+                        .andExpression("substr(billing_date, 0, 7)").as("monthYear")
+                        .and("amount_after_disc").as("amountAfterDisc"),
+
+                // Group by monthYear and sum the amount_after_disc
+                Aggregation.group("monthYear")
+                        .sum("amountAfterDisc").as("totalAmount")
+        );
+
+        // Execute the aggregation query on the soldstock collection
+        AggregationResults<MonthlySales> results = mongoTemplate.aggregate(aggregation, "soldstock", MonthlySales.class);
+
+        return results.getMappedResults();
+    }
+
+
 }
 

@@ -1138,5 +1138,69 @@ public class EzbillingBoImpl implements EzbillingBo {
         return transformedAndSortedSales;
     }
 
+    public List<MonthlySales> getSixMonthsSaleForCompanies(String company,int noOfMonths) {
+        List<MonthlySales> monthlySales = billingRepositry.getSumOfAmountAfterDiscForLastSixMonthsPerCompany(company,noOfMonths);
+
+        // Month number to name map
+        Map<Integer, String> monthMap = new HashMap<>();
+        monthMap.put(1, "January");
+        monthMap.put(2, "February");
+        monthMap.put(3, "March");
+        monthMap.put(4, "April");
+        monthMap.put(5, "May");
+        monthMap.put(6, "June");
+        monthMap.put(7, "July");
+        monthMap.put(8, "August");
+        monthMap.put(9, "September");
+        monthMap.put(10, "October");
+        monthMap.put(11, "November");
+        monthMap.put(12, "December");
+
+        List<MonthlySales> transformedAndSortedSales = monthlySales.stream()
+                .map(sales -> {
+                    String id = sales.getId();
+                    String newId = id; // Initialize newId with the original id
+
+                    try {
+                        // Parse the year and month from the id
+                        String[] parts = id.split("-");
+                        if (parts.length == 2) {
+                            int year = Integer.parseInt(parts[0]);
+                            int monthNumber = Integer.parseInt(parts[1]);
+
+                            if (monthNumber >= 1 && monthNumber <= 12) {
+                                String month = monthMap.get(monthNumber);
+                                newId = month + " " + year; // Format newId as "Month Year"
+                            }
+                        }
+                    } catch (NumberFormatException e) {
+                        // Log or handle the exception with more context
+                        System.err.println("Invalid ID format for sales: " + sales);
+                    }
+
+                    // Create a new MonthlySales object with the updated id
+                    return new MonthlySales(newId, sales.getTotalAmount()); // Adjust constructor if needed
+                })
+                .sorted(Comparator.comparing(sales -> {
+                    String[] parts = sales.getId().split(" ");
+                    int year = 0;
+                    int monthNumber = 0;
+
+                    if (parts.length == 2) {
+                        String monthName = parts[0];
+                        year = Integer.parseInt(parts[1]);
+                        monthNumber = monthMap.entrySet()
+                                .stream()
+                                .filter(entry -> entry.getValue().equals(monthName))
+                                .map(Map.Entry::getKey)
+                                .findFirst()
+                                .orElse(0);
+                    }
+                    return LocalDate.of(year, monthNumber, 1);
+                }))
+                .collect(Collectors.toList());
+
+        return transformedAndSortedSales;
+    }
 
 }
