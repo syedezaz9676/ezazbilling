@@ -43,26 +43,30 @@ public class CustomerRepositoryImpl implements CustomerRepositoryCustom {
 
     @Override
     public List<CustomerDetailswithGstNo> findGstCustomers() {
-        Query query = new Query(Criteria.where("ctno").ne("not avaliable"));
+//        Query query = new Query(Criteria.where("ctno").ne("not avaliable"));
+        Query query = new Query(Criteria.where("ctno").not().regex("^not"));
         return mongoTemplate.find(query, CustomerDetailswithGstNo.class, "customers");
     }
 
     public List<String> findGstCustomerIdsWithoutIgst() {
         Query query = new Query();
-        query.addCriteria(Criteria.where("ctno").ne("not avaliable").and("isigst").is("No"));
+//        query.addCriteria(Criteria.where("ctno").ne("not avaliable").and("isigst").is("No"));
+        query.addCriteria(Criteria.where("ctno").not().regex("^not").and("isigst").is("No"));
         List<Customer> customers = mongoTemplate.find(query, Customer.class);
         return customers.stream().map(Customer::getId).collect(Collectors.toList());
     }
     public List<String> findGstCustomerIdsWithIgst() {
         Query query = new Query();
-        query.addCriteria(Criteria.where("ctno").ne("not avaliable").and("isigst").is("Yes"));
+//        query.addCriteria(Criteria.where("ctno").ne("not avaliable").and("isigst").is("Yes"));
+        query.addCriteria(Criteria.where("ctno").not().regex("^not").and("isigst").is("Yes"));
         List<Customer> customers = mongoTemplate.find(query, Customer.class);
         return customers.stream().map(Customer::getId).collect(Collectors.toList());
     }
 
     public List<String> findGstCustomerIdsWithGst() {
         Query query = new Query();
-        query.addCriteria(Criteria.where("ctno").ne("not avaliable"));
+//        query.addCriteria(Criteria.where("ctno").ne("not avaliable"));
+        query.addCriteria(Criteria.where("ctno").not().regex("^not"));
         List<Customer> customers = mongoTemplate.find(query, Customer.class);
         return customers.stream().map(Customer::getId).collect(Collectors.toList());
     }

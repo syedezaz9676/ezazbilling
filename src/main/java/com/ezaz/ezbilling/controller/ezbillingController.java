@@ -5,10 +5,12 @@ import com.ezaz.ezbilling.Util.MongodbBackup;
 import com.ezaz.ezbilling.model.*;
 import com.ezaz.ezbilling.repository.BillingRepositry;
 import com.ezaz.ezbilling.repository.CompanyRepository;
+import com.ezaz.ezbilling.services.ApiServices;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.text.ParseException;
 import java.util.List;
 import java.util.Optional;
@@ -27,6 +29,8 @@ public class ezbillingController {
     private EzbillingBo ezbillingBo;
     @Autowired
     private MongodbBackup mongodbBackup;
+    @Autowired
+    private ApiServices apiServices;
 
     public final static String URL = "http://localhost:8081/";
 
@@ -149,14 +153,14 @@ public class ezbillingController {
     }
     @CrossOrigin(origins = URL)
     @RequestMapping(value="/getgstdetails", method = RequestMethod.GET)
-    public List<GstReport> getGstDetailsOfCustomer (@RequestParam("startDate") String startDate, @RequestParam("endDate") String endDate) throws ParseException {
-     return ezbillingBo.getGstDetailsByDate(startDate,endDate);
+    public List<GstReport> getGstDetailsOfCustomer (@RequestParam("startDate") String startDate, @RequestParam("endDate") String endDate, @RequestParam("dgst") String dgst) throws ParseException, IOException {
+     return ezbillingBo.getGstDetailsByDate(startDate,endDate,dgst);
 
     }
 
     @CrossOrigin(origins = URL)
     @RequestMapping(value="/gethsngstdetails", method = RequestMethod.GET)
-    public List<SoldStockSummary> getGstDetailsForHsnCode (@RequestParam("startDate") String startDate, @RequestParam("endDate") String endDate) throws ParseException {
+    public List<SoldStockSummary> getGstDetailsForHsnCode (@RequestParam("startDate") String startDate, @RequestParam("endDate") String endDate) throws ParseException, IOException {
         return ezbillingBo.getGstDetailsForHsnCode(startDate,endDate);
 
     }
@@ -406,4 +410,11 @@ public class ezbillingController {
 
     }
 
+    @CrossOrigin(origins = URL)
+    @RequestMapping(value="/setLegalName", method = RequestMethod.GET)
+    public String setLegalName () throws ParseException {
+        ezbillingBo.setLegalName();
+        return "Done";
+
+    }
 }

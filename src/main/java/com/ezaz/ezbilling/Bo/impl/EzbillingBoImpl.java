@@ -7,6 +7,8 @@ import com.ezaz.ezbilling.model.*;
 import com.ezaz.ezbilling.model.mysql.*;
 import com.ezaz.ezbilling.repository.*;
 import com.ezaz.ezbilling.repository.mysql.*;
+import com.ezaz.ezbilling.services.ApiServices;
+import com.ezaz.ezbilling.services.CsvExportService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -14,6 +16,7 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -51,6 +54,11 @@ public class EzbillingBoImpl implements EzbillingBo {
    @Autowired
    private MongodbBackup mongodbBackup;
 
+   @Autowired
+   private ApiServices apiServices;
+
+   @Autowired
+   private CsvExportService csvExportService;
     private final CustomerRepository customerRepository;
     private final GstCodeDetailsRepo gstCodeDetailsRepo;
     private final ChangeDateFormatRepo changeDateFormatRepo;
@@ -84,8 +92,9 @@ public class EzbillingBoImpl implements EzbillingBo {
     private final JpaCompanyRepo jpaCompanyRepo;
     private final JpaBillsAmountRepo jpaBillsAmountRepo;
     private final BalanceDetailsRepository balanceDetailsRepository;
+    private final UqcAndDescriptionRepository uqcAndDescriptionRepository;
 
-    public EzbillingBoImpl( CustomerRepository customerRepository, GstCodeDetailsRepo gstCodeDetailsRepo, ChangeDateFormatRepo changeDateFormatRepo, BillAmountRepository billAmountRepository, CompanyRepository companyRepository, ProductRepository productRepository, ProductDetailsRepository productDetailsRepository, CompanyDetailsRepository companyDetailsRepository, CustomerRepositoryCustom customerRepositoryCustom, UsersRepository usersRepository, BillingRepositry billingRepositry, BillItemsRepository billItemsRepository, PercentageUtils percentageUtils, StockItemDetails stockItemDetails, StockRepository stockRepository, JpaCustomerRepo jpaCustomerRepo, JpaProductRepo jpaProductRepo, JpaSoldStockRepo jpaSoldStockRepo, JpaCompanyRepo jpaCompanyRepo, JpaBillsAmountRepo jpaBillsAmountRepo, BalanceDetailsRepository balanceDetailsRepository) {
+    public EzbillingBoImpl(CustomerRepository customerRepository, GstCodeDetailsRepo gstCodeDetailsRepo, ChangeDateFormatRepo changeDateFormatRepo, BillAmountRepository billAmountRepository, CompanyRepository companyRepository, ProductRepository productRepository, ProductDetailsRepository productDetailsRepository, CompanyDetailsRepository companyDetailsRepository, CustomerRepositoryCustom customerRepositoryCustom, UsersRepository usersRepository, BillingRepositry billingRepositry, BillItemsRepository billItemsRepository, PercentageUtils percentageUtils, StockItemDetails stockItemDetails, StockRepository stockRepository, JpaCustomerRepo jpaCustomerRepo, JpaProductRepo jpaProductRepo, JpaSoldStockRepo jpaSoldStockRepo, JpaCompanyRepo jpaCompanyRepo, JpaBillsAmountRepo jpaBillsAmountRepo, BalanceDetailsRepository balanceDetailsRepository, UqcAndDescriptionRepository uqcAndDescriptionRepository) {
 
         this.customerRepository = customerRepository;
         this.gstCodeDetailsRepo = gstCodeDetailsRepo;
@@ -109,6 +118,7 @@ public class EzbillingBoImpl implements EzbillingBo {
         this.jpaBillsAmountRepo = jpaBillsAmountRepo;
         this.balanceDetailsRepository = balanceDetailsRepository;
 
+        this.uqcAndDescriptionRepository = uqcAndDescriptionRepository;
     }
 
     @Override
@@ -472,7 +482,7 @@ public class EzbillingBoImpl implements EzbillingBo {
     }
 
     @Override
-    public List<GstReport> getGstDetailsByDate(String startDate, String endDate) throws ParseException {
+    public List<GstReport> getGstDetailsByDate(String startDate, String endDate,String dgst) throws ParseException, IOException {
         List<GstReport> gstReports = new ArrayList<>();
         List<CustomerDetailswithGstNo> customerDetailswithGstNos = customerRepositoryCustom.findGstCustomers();
 
@@ -527,12 +537,61 @@ public class EzbillingBoImpl implements EzbillingBo {
                 gstReports.add(gstReport);
             }
         }
+        List<String[]> gstDetailsList = new ArrayList<>();
 
+        for (GstReport gstReport1:gstReports
+        ) {
+            Customer customer = customerRepository.findByCname(gstReport1.getCustomerName());
+            for (BillGstDetails billGstDetails1:gstReport1.getBillGstDetails()
+                 ) {
+                for (sumOfGst sumOfGst1: billGstDetails1.getSumOfGsts()
+                     ) {
+                    String[] gstDetails = new String[]{customer.getLegal_name(),sumOfGst1.getBno(),convertDate(sumOfGst1.getBillingDate()),String.format("%.2f", getTotalInvoiceValue(sumOfGst1.getSumOfGstAmount(),sumOfGst1.getGst(),sumOfGst1.getSumOfCessAmount())),customer.getSupplyplace(),
+                    "N",null,getInvoiceType(customer.getSupplyplace(),dgst),null,sumOfGst1.getGst().toString(),String.format("%.2f", sumOfGst1.getSumOfGstAmount()),String.format("%.2f", sumOfGst1.getSumOfCessAmount())};
+
+                    gstDetailsList.add(gstDetails);
+
+                }
+            }
+
+        }
+        String[] gstDetailsHeaders = {
+                "Receiver Name", "Invoice Number", "Invoice Date", "Invoice Value",
+                "Place Of Supply", "Reverse Charge", "Applicable % of Tax Rate",
+                "Invoice Type", "E-Commerce GSTIN", "Rate", "Taxable Value", "Cess Amount"
+        };
+        String documentName="b2b_sez_de.csv";
+        csvExportService.generateGstDetailsCsvFile(gstDetailsList,gstDetailsHeaders,documentName);
         return gstReports;
     }
+    public Double getTotalInvoiceValue(Double taxableAmount,int gstPer,Double cessAmount){
+        Double gstAmount = percentageUtils.getPercentageAmount(taxableAmount,gstPer);
+        return taxableAmount+gstAmount+cessAmount;
+    }
+    public String getInvoiceType(String supplyPlace, String dgst){
+        User user = usersRepository.findById(dgst).orElse(null);
+            // Split the string at the hyphen and get the part after it
+            String[] parts = supplyPlace.split("-");
+                // Compare the part after the hyphen with str2
+               if(parts[1].equals(user.getState())){
+                   return "Regular B2B";
+               }else{
+                   return "Intra-State supplies attracting IGST";
+               }
+    }
+    public static String convertDate(String inputDate) {
+        // Define the input and output date formats
+        DateTimeFormatter inputFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        DateTimeFormatter outputFormatter = DateTimeFormatter.ofPattern("dd-MMM-yy", Locale.ENGLISH);
 
+        // Parse the input date string to LocalDate
+        LocalDate date = LocalDate.parse(inputDate, inputFormatter);
 
-    public List<SoldStockSummary> getGstDetailsForHsnCode(String startDate, String endDate){
+        // Format the date to the desired output format
+        return date.format(outputFormatter).toLowerCase();
+    }
+
+    public List<SoldStockSummary> getGstDetailsForHsnCode(String startDate, String endDate) throws IOException {
 
         List<SoldStockSummary> soldStockSummaries =billingRepositry.getSoldStockSummary(startDate,endDate);
         List<SoldStockSummary> soldStockSummariesWithIgst =billingRepositry.getSoldStockSummaryForHsncode(startDate,endDate);
@@ -540,9 +599,40 @@ public class EzbillingBoImpl implements EzbillingBo {
         List<SoldStockSummary> finalSoldStockSummaries = Stream.concat(soldStockSummaries.stream(), soldStockSummariesWithIgst.stream())
                 .collect(Collectors.toList());
 
+        String[] hsnDetailsHeaders = {
+                "HSN", "Description", "UQC", "Total Quantity", "Total Value", "Taxable Value", "Integrated Tax Amount",
+                "Central Tax Amount", "State/UT Tax Amount", "Cess Amount", "Rate"
+        };
+        List<String[]> hsnDetailsDataList= new ArrayList<>();
+        for (SoldStockSummary soldStockSummary1:finalSoldStockSummaries
+             ) {
+            UqcAndDescription uqcAndDescription = getHsnDiscription(soldStockSummary1.getHsn_code());
+            String[] hsnDetailsData = new String[]{soldStockSummary1.getHsn_code(),
+                    uqcAndDescription.getHsnDescription(),
+                    uqcAndDescription.getUqc(),
+                    String.valueOf(soldStockSummary1.getTotalQty())
+            ,String.format("%.2f", (soldStockSummary1.getTaxableAmount()+soldStockSummary1.getTaxAmount()+soldStockSummary1.getTotalCessAmount())),
+                    String.valueOf(soldStockSummary1.getTaxableAmount()),
+                    String.valueOf(soldStockSummary1.getIgst())
+            ,String.valueOf(soldStockSummary1.getCgst()),
+                    String.valueOf(soldStockSummary1.getSgst()),
+                    String.valueOf(soldStockSummary1.getTotalCessAmount())
+            ,String.valueOf(soldStockSummary1.getProduct_gst())};
+            hsnDetailsDataList.add(hsnDetailsData);
+        }
+        csvExportService.generateGstDetailsCsvFile(hsnDetailsDataList,hsnDetailsHeaders,"hsn.csv");
+
         return finalSoldStockSummaries;
 
     }
+
+  public UqcAndDescription getHsnDiscription(String hsnCode){
+        UqcAndDescription uqcAndDescription =uqcAndDescriptionRepository.findByHsnCode(hsnCode);
+        if (uqcAndDescription == null){
+            uqcAndDescription =uqcAndDescriptionRepository.findByHsnCode("0"+hsnCode);
+        }
+        return uqcAndDescription;
+  }
 
     public StockDetails getStockItemDetails(String productId) {
         return stockItemDetails.findByPid(productId);
@@ -1202,5 +1292,23 @@ public class EzbillingBoImpl implements EzbillingBo {
 
         return transformedAndSortedSales;
     }
+    public void setLegalName(){
 
+        List<Customer> customerList = customerRepository.findAll();
+        for (Customer customer : customerList
+        ) {
+            System.out.println("GstNo: "+customer.getCtno());
+            if(customer.getCtno() != "not avaliable" && !customer.getCtno().equals(null)) {
+                GstDetailsResponse gstDetailsResponse = apiServices.getGstinData(customer.getCtno());
+                System.out.println("response" + gstDetailsResponse.getData().getTradeNam());
+                customer.setLegal_name(gstDetailsResponse.getData().getLgnm());
+                System.out.println("legal name"+gstDetailsResponse.getData().getLgnm());
+                customerRepository.save(customer);
+            }
+
+
+        }
+
+
+    }
 }

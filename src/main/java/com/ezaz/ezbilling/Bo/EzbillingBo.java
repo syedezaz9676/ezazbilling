@@ -2,6 +2,7 @@ package com.ezaz.ezbilling.Bo;
 
 import com.ezaz.ezbilling.model.*;
 
+import java.io.IOException;
 import java.text.ParseException;
 import java.util.List;
 import java.util.Optional;
@@ -44,9 +45,9 @@ public interface EzbillingBo {
 
     public String updateBillItems(List<BillingDetails> billingDetailsList);
 
-    public List<GstReport>  getGstDetailsByDate(String startDate, String endDate) throws ParseException;
+    public List<GstReport>  getGstDetailsByDate(String startDate, String endDate,String dgst) throws ParseException, IOException;
 
-    public List<SoldStockSummary> getGstDetailsForHsnCode(String startDate, String endDate);
+    public List<SoldStockSummary> getGstDetailsForHsnCode(String startDate, String endDate) throws IOException;
 
     public StockDetails getStockItemDetails(String productId);
 
@@ -79,6 +80,7 @@ public interface EzbillingBo {
     public void addCessandNetAmount(String date) throws ParseException;
     public List<MonthlySales> getSixMonthsSale();
     public List<MonthlySales> getSixMonthsSaleForCompanies(String company,int noOfMonths);
+    public void setLegalName();
     }
 
 
