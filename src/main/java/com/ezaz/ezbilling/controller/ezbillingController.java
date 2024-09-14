@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.text.ParseException;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @CrossOrigin(origins = "http://localhost:8081/")
 @RestController
@@ -415,6 +416,13 @@ public class ezbillingController {
     public String setLegalName () throws ParseException {
         ezbillingBo.setLegalName();
         return "Done";
+
+    }
+
+    @CrossOrigin(origins = URL)
+    @RequestMapping(value="/getinvalidhsncodes", method = RequestMethod.GET)
+    public Set<String> getInvalidHsncodes () throws ParseException {
+        return ezbillingBo.getHsncodesNotAvaliable();
 
     }
 }

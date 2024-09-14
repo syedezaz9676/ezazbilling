@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.text.ParseException;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 
 public interface EzbillingBo {
@@ -46,6 +47,7 @@ public interface EzbillingBo {
     public String updateBillItems(List<BillingDetails> billingDetailsList);
 
     public List<GstReport>  getGstDetailsByDate(String startDate, String endDate,String dgst) throws ParseException, IOException;
+    public Set<String> getHsncodesNotAvaliable();
 
     public List<SoldStockSummary> getGstDetailsForHsnCode(String startDate, String endDate) throws IOException;
 

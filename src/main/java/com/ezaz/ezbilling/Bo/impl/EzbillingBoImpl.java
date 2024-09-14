@@ -1311,4 +1311,22 @@ public class EzbillingBoImpl implements EzbillingBo {
 
 
     }
+
+    public Set<String> getHsncodesNotAvaliable(){
+        List<String> hsncodes= new ArrayList<>();
+        List<ProductDetails> productDetails = productRepository.findAll();
+        List<UqcAndDescription> uqcAndDescriptions = uqcAndDescriptionRepository.findAll();
+        Set<String> allHsnCodes = uqcAndDescriptions.stream()
+                .map(UqcAndDescription::getHsnCode)
+                .collect(Collectors.toSet());
+
+        Set<String> hsncodeNotPresent = productDetails.stream()
+                .map(ProductDetails::getHsn_code)
+                .filter(hsnCode -> !allHsnCodes.contains(hsnCode))
+                .collect(Collectors.toSet());
+
+       return hsncodeNotPresent;
+
+
+    }
 }
