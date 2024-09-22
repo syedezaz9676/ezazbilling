@@ -123,18 +123,20 @@ public class EzbillingBoImpl implements EzbillingBo {
 
     @Override
     public void saveCompanyDetails(CompanyDetails companyDetails) {
+
+        companyDetails.setStatus("A");
         companyRepository.save(companyDetails);
     }
 
     @Override
     public List<CompanyDetails> getCompanyDetails(String id) {
-        return companyRepository.findAllByDgst(id);
+        return companyRepository.findAllByDgstAndStatusNot(id,"D");
     }
 
     @Override
     public void saveCustomerToDB(Customer customer) {
 
-
+        customer.setStatus("A");
         customerRepository.save(customer);
 
         if(!customer.getIsEdit()) {
@@ -157,6 +159,7 @@ public class EzbillingBoImpl implements EzbillingBo {
 
     @Override
     public void saveProductDetails(ProductDetails productDetails) {
+        productDetails.setStatus("A");
         productRepository.save(productDetails);
         if(!productDetails.getIsEdit()) {
             ProductDetails productDetails1 = productRepository.findByPname(productDetails.getPname());
@@ -173,7 +176,13 @@ public class EzbillingBoImpl implements EzbillingBo {
 
     @Override
     public List<ProductDetails> getProductsDetails(String id) {
-        return productRepository.findAllByDgst(id);
+
+        List<ProductDetails> productList = productRepository.findAllByDgst(id);
+
+            return productList.stream()
+                    .filter(product -> Optional.ofNullable(product.getStatus()).map(status -> !status.equals("D")).orElse(true))
+                    .collect(Collectors.toList());
+
     }
 
     @Override
@@ -208,12 +217,17 @@ public class EzbillingBoImpl implements EzbillingBo {
 
     @Override
     public List<ProductNames> getProductDetailsByCompany(String comapanyName) {
-        return productRepository.findAllByPcom(comapanyName);
+        return productRepository.findAllByPcomAndStatusNot(comapanyName, "D");
+
     }
 
     @Override
     public List<Customer> getCustomerByDgst(String dgst) {
-        return customerRepository.findAllByDgst(dgst);
+        List<Customer> customerList =customerRepository.findAllByDgst(dgst);
+
+        return customerList.stream()
+                .filter(customer -> Optional.ofNullable(customer.getStatus()).map(status -> !status.equals("D")).orElse(true))
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -581,14 +595,17 @@ public class EzbillingBoImpl implements EzbillingBo {
     }
     public static String convertDate(String inputDate) {
         // Define the input and output date formats
-        DateTimeFormatter inputFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-        DateTimeFormatter outputFormatter = DateTimeFormatter.ofPattern("dd-MMM-yy", Locale.ENGLISH);
+        if(inputDate.length()==10) {
+            DateTimeFormatter inputFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+            DateTimeFormatter outputFormatter = DateTimeFormatter.ofPattern("dd-MMM-yy", Locale.ENGLISH);
 
-        // Parse the input date string to LocalDate
-        LocalDate date = LocalDate.parse(inputDate, inputFormatter);
+            // Parse the input date string to LocalDate
+            LocalDate date = LocalDate.parse(inputDate, inputFormatter);
 
-        // Format the date to the desired output format
-        return date.format(outputFormatter).toLowerCase();
+            // Format the date to the desired output format
+            return date.format(outputFormatter).toLowerCase();
+        }
+        return convertToISO8601(inputDate);
     }
 
     public List<SoldStockSummary> getGstDetailsForHsnCode(String startDate, String endDate) throws IOException {
@@ -1328,5 +1345,31 @@ public class EzbillingBoImpl implements EzbillingBo {
        return hsncodeNotPresent;
 
 
+    }
+
+    public List<UqcAndDescription> getAllHsncodeDetails(){
+        return uqcAndDescriptionRepository.findAll();
+    }
+
+    public void addHsnCodeDetails(UqcAndDescription uqcAndDescription){
+        uqcAndDescriptionRepository.save(uqcAndDescription);
+    }
+
+    public void deActivateCompany(String companyId){
+        CompanyDetails companyDetails = companyRepository.findById(companyId).orElse(null);
+        companyDetails.setStatus("D");
+        companyRepository.save(companyDetails);
+    }
+
+    public void deActivateProduct(String productId){
+        ProductDetails productDetails = productRepository.findById(productId).orElse(null);
+        productDetails.setStatus("D");
+        productRepository.save(productDetails);
+    }
+
+    public void deActivateCustomer(String customerId){
+        Customer customer = customerRepository.findById(customerId).orElse(null);
+        customer.setStatus("D");
+        customerRepository.save(customer);
     }
 }

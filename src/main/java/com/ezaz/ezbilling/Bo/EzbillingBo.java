@@ -83,6 +83,12 @@ public interface EzbillingBo {
     public List<MonthlySales> getSixMonthsSale();
     public List<MonthlySales> getSixMonthsSaleForCompanies(String company,int noOfMonths);
     public void setLegalName();
+    public List<UqcAndDescription> getAllHsncodeDetails();
+    public void addHsnCodeDetails(UqcAndDescription uqcAndDescription);
+    public void deActivateCustomer(String customerId);
+    public void deActivateProduct(String productId);
+    public void deActivateCompany(String companyId);
+
     }
 
 

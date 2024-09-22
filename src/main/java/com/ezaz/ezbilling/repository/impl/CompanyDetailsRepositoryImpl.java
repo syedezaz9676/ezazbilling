@@ -25,7 +25,7 @@ public class CompanyDetailsRepositoryImpl  implements CompanyDetailsRepository {
     public List<CompanyNames> getCompanyNames(String id) {
 
         AggregationOperation matchOperation = Aggregation.match(
-                Criteria.where("dgst").is(id)
+                Criteria.where("dgst").is(id).and("status").ne("D")
         );
         Aggregation aggregation = Aggregation.newAggregation(matchOperation,
                 Aggregation.project("id", "name")

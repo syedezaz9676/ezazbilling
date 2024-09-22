@@ -27,5 +27,6 @@ public class ProductDetails {
     private Integer cess;
     private String dgst;
     private Boolean isEdit;
+    private String status;
 
 }

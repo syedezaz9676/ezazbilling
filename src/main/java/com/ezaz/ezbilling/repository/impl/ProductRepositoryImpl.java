@@ -26,7 +26,7 @@ public class ProductRepositoryImpl implements ProductDetailsRepository {
     public List<ProductNames> getProductNames(String id) {
 
         AggregationOperation matchOperation = Aggregation.match(
-                Criteria.where("dgst").is(id)
+                Criteria.where("dgst").is(id).and("status").ne("D")
         );
         Aggregation aggregation = Aggregation.newAggregation(matchOperation,
                 Aggregation.project("_id", "pname")
@@ -40,7 +40,7 @@ public class ProductRepositoryImpl implements ProductDetailsRepository {
     public List<ProductDetails> getProductDetailsByComapany(String companyName) {
 
         AggregationOperation matchOperation = Aggregation.match(
-                Criteria.where("pcom").is(companyName)
+                Criteria.where("pcom").is(companyName).and("status").ne("D")
         );
 //        Aggregation aggregation = Aggregation.newAggregation(matchOperation,
 //                Aggregation.project("_id", "pname")

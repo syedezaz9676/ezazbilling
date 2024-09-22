@@ -9,7 +9,7 @@ import java.util.List;
 @Repository
 public interface CompanyRepository extends MongoRepository<CompanyDetails, String> {
 
-    List<CompanyDetails> findAllByDgst(String id);
+    List<CompanyDetails> findAllByDgstAndStatusNot(String dgst, String status);
 
 
 }

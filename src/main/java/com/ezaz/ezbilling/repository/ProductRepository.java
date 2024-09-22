@@ -12,7 +12,7 @@ public interface ProductRepository extends MongoRepository<ProductDetails, Strin
 
     List<ProductDetails> findAllByDgst(String dgst);
 
-    List<ProductNames> findAllByPcom(String pcom);
+    List<ProductNames> findAllByPcomAndStatusNot(String companyName, String status);
     ProductDetails findByPname(String pname);
 
 }

@@ -31,4 +31,5 @@ public class Customer {
     private String legal_name;
     private Boolean isEdit;
     private String dgst;;
+    private String status;
 }

@@ -425,4 +425,43 @@ public class ezbillingController {
         return ezbillingBo.getHsncodesNotAvaliable();
 
     }
+
+    @CrossOrigin(origins = URL)
+    @RequestMapping(value="/gethsncodes", method = RequestMethod.GET)
+    public List<UqcAndDescription> getHsncodes () throws ParseException {
+        return ezbillingBo.getAllHsncodeDetails();
+
+    }
+
+    @CrossOrigin(origins = URL)
+    @PostMapping("/addhsndetails")
+    public String addHsnCodeDetails(@RequestBody UqcAndDescription uqcAndDescription){
+        ezbillingBo.addHsnCodeDetails(uqcAndDescription);
+        String success= "sucess";
+        return success;
+    }
+
+    @CrossOrigin(origins = URL)
+    @PostMapping("/deactivateproduct/{id}")
+    public String deActivateProduct(@PathVariable("id") String id){
+        ezbillingBo.deActivateProduct(id);
+        String success= "sucess";
+        return success;
+    }
+
+    @CrossOrigin(origins = URL)
+    @PostMapping("/deactivatecompany/{id}")
+    public String deActivateCompany(@PathVariable("id") String id){
+        ezbillingBo.deActivateCompany(id);
+        String success= "sucess";
+        return success;
+    }
+
+    @CrossOrigin(origins = URL)
+    @PostMapping("/deactivatecustomer/{id}")
+    public String deActivateCustomer(@PathVariable("id") String id){
+        ezbillingBo.deActivateCustomer(id);
+        String success= "sucess";
+        return success;
+    }
 }

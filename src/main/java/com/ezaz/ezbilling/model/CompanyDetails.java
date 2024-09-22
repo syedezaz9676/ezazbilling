@@ -20,5 +20,6 @@ public class CompanyDetails {
     private String name;
     private List<Integer> gstPercentage;
     private String dgst;
+    private String status;
 
 }
