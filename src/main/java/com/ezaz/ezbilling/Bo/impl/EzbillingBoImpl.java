@@ -525,7 +525,7 @@ public class EzbillingBoImpl implements EzbillingBo {
                     Double rateAfter = (billAggregationResult.getNetAmount());
                     sumOfGst.setSumOfGstAmount(rateAfter);
                     sumOfGst.setBno(billAggregationResult.getBno());
-                    sumOfGst.setBillingDate(billAggregationResult.getBillingDate());
+                    sumOfGst.setBillingDate((billAggregationResult.getBillingDate()).substring(0,10));
                     sumOfGst.setSumOfCessAmount(billAggregationResult.getTotalCessAmount());
 
                     // Check if the current GST value has already been added for this BillGstDetails
@@ -595,17 +595,15 @@ public class EzbillingBoImpl implements EzbillingBo {
     }
     public static String convertDate(String inputDate) {
         // Define the input and output date formats
-        if(inputDate.length()==10) {
+        String trimmedDate= inputDate.substring(0, 10);
             DateTimeFormatter inputFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
             DateTimeFormatter outputFormatter = DateTimeFormatter.ofPattern("dd-MMM-yy", Locale.ENGLISH);
 
             // Parse the input date string to LocalDate
-            LocalDate date = LocalDate.parse(inputDate, inputFormatter);
+            LocalDate date = LocalDate.parse(trimmedDate, inputFormatter);
 
             // Format the date to the desired output format
             return date.format(outputFormatter).toLowerCase();
-        }
-        return convertToISO8601(inputDate);
     }
 
     public List<SoldStockSummary> getGstDetailsForHsnCode(String startDate, String endDate) throws IOException {

@@ -12,6 +12,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Document(collection = "uqcanddescription")
 public class UqcAndDescription {
 
+    private String _id;
     private String hsnCode;
     private String hsnDescription;
     private String uqc;
