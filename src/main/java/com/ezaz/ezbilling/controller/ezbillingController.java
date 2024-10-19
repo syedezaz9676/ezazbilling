@@ -464,4 +464,18 @@ public class ezbillingController {
         String success= "sucess";
         return success;
     }
+
+    @CrossOrigin(origins = URL)
+    @RequestMapping(value="/getproductsalesqty", method = RequestMethod.GET)
+    public List<ProductQty> getProductSalesQty (@RequestParam("productCompany") String productCompany, @RequestParam("startDate") String startDate, @RequestParam("endDate") String endDate) throws ParseException {
+        return ezbillingBo.getProductSales(productCompany,startDate,endDate);
+
+    }
+
+    @CrossOrigin(origins = URL)
+    @RequestMapping(value="/getproductsalesqtymonthly", method = RequestMethod.GET)
+    public List<ProductSixMonthsSales> getProductSalesQtyMonthly (@RequestParam("productCompany") String productCompany, @RequestParam("productName") String productName, @RequestParam("noOfMonths") int noOfMonths) throws ParseException {
+        return ezbillingBo.getProductSalesMontly(productCompany,productName,noOfMonths);
+
+    }
 }

@@ -88,6 +88,8 @@ public interface EzbillingBo {
     public void deActivateCustomer(String customerId);
     public void deActivateProduct(String productId);
     public void deActivateCompany(String companyId);
+    public List<ProductQty> getProductSales(String productCompany, String startDate, String endDate);
+    public List<ProductSixMonthsSales> getProductSalesMontly(String productCompany, String productName, int numberOfMonths);
 
     }
 

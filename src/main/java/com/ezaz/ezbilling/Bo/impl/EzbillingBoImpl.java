@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.text.DateFormat;
+import java.text.DateFormatSymbols;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
@@ -822,9 +823,12 @@ public class EzbillingBoImpl implements EzbillingBo {
        List<BillAmountDetails> billAmountDetailsWithCustomerNames= new ArrayList<>();
        for (BillAmountDetails amountDetails :billAmountDetails
             ) {
+           System.out.println("amountDetails.getCno()"+amountDetails.getCno());
            Customer customer = customerRepository.findById(amountDetails.getCno()).orElse(null);
-           amountDetails.setCno(customer.getCname());
-           billAmountDetailsWithCustomerNames.add(amountDetails);
+           if (customer!=null) {
+               amountDetails.setCno(customer.getCname());
+               billAmountDetailsWithCustomerNames.add(amountDetails);
+           }
        }
        return billAmountDetailsWithCustomerNames;
    }
@@ -1369,5 +1373,28 @@ public class EzbillingBoImpl implements EzbillingBo {
         Customer customer = customerRepository.findById(customerId).orElse(null);
         customer.setStatus("D");
         customerRepository.save(customer);
+    }
+
+    public List<ProductQty> getProductSales(String productCompany, String startDate, String endDate){
+        List<ProductQty> productQtyList = billingRepositry.getProductSales(productCompany,startDate,endDate);
+        for (ProductQty productQty: productQtyList
+             ) {
+            ProductDetails productDetails =productRepository.findById(productQty.getProductName()).orElse(null);
+            productQty.setProductName(productDetails.getPname());
+        }
+        return  productQtyList;
+    }
+    public List<ProductSixMonthsSales> getProductSalesMontly(String productCompany, String productName, int numberOfMonths){
+        List<ProductSixMonthsSales> productSixMonthsSales = billingRepositry.getProductSalesMontly(productCompany,productName,numberOfMonths);
+        for (ProductSixMonthsSales productSixMonthsSales1: productSixMonthsSales
+             ) {
+            String[] parts = productSixMonthsSales1.getId().split("-");
+            int month = Integer.parseInt(parts[1]); // Get the month part
+
+            // Get the month name from the month number
+           productSixMonthsSales1.setId(new DateFormatSymbols().getMonths()[month - 1]);
+        }
+
+        return  productSixMonthsSales;
     }
 }

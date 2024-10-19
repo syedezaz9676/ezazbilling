@@ -287,6 +287,58 @@ public class BillingRepositryImpl  implements BillingRepositry {
         return results.getMappedResults();
     }
 
+    public List<ProductQty> getProductSales(String productCompany, String startDate, String endDate) {
+
+        // Match documents with billing_date in the given range
+        MatchOperation matchOperation = Aggregation.match(
+                Criteria.where("billing_date").gte(startDate).lte(endDate).and("product_company").is(productCompany)
+        );
+
+        // Group by product_company and sum qty
+        GroupOperation groupOperation = Aggregation.group("product_name")
+                .sum("qty").as("totalQty")
+                .sum("amount_after_disc").as("totalAmount")
+                .first("product_name").as("productName");
+
+        // Build the aggregation pipeline
+        Aggregation aggregation = Aggregation.newAggregation(matchOperation, groupOperation);
+
+        // Execute the aggregation
+        AggregationResults<ProductQty> result = mongoTemplate.aggregate(
+                aggregation, "soldstock", ProductQty.class
+        );
+        System.out.println("result"+result.getMappedResults());
+        return result.getMappedResults();
+    }
+    public List<ProductSixMonthsSales> getProductSalesMontly(String productCompany, String productName, int numberOfMonths) {
+        LocalDate sixMonthsAgo = LocalDate.now().minusMonths(numberOfMonths);
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
+        // Define the aggregation query
+        Aggregation aggregation = Aggregation.newAggregation(
+                // Match billing_date within the last 6 months and filter by product_company
+                Aggregation.match(Criteria.where("billing_date").gte(sixMonthsAgo.format(formatter))
+                        .and("product_company").is(productCompany).and("product_name").is(productName))
+                ,
+
+                // Extract the year and month (yyyy-MM) from billing_date
+                Aggregation.project()
+                        .andExpression("substr(billing_date, 0, 7)").as("monthYear")
+                        .and("amount_after_disc").as("amountAfterDisc")
+                        .and("qty").as("qty"),
+
+                // Group by monthYear and sum the amount_after_disc
+                Aggregation.group("monthYear")
+                        .sum("amountAfterDisc").as("totalAmount")
+                .sum("qty").as("totalQty"),
+                Aggregation.sort(Sort.Direction.ASC, "monthYear")
+        );
+
+        AggregationResults<ProductSixMonthsSales> aggregationResults = mongoTemplate.aggregate(aggregation, "soldstock", ProductSixMonthsSales.class);
+        return aggregationResults.getMappedResults();
+    }
+
+
 
 }
 
