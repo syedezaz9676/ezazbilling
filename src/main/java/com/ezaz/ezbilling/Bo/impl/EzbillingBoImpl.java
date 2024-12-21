@@ -4,9 +4,7 @@ import com.ezaz.ezbilling.Bo.EzbillingBo;
 import com.ezaz.ezbilling.Util.MongodbBackup;
 import com.ezaz.ezbilling.Util.PercentageUtils;
 import com.ezaz.ezbilling.model.*;
-import com.ezaz.ezbilling.model.mysql.*;
 import com.ezaz.ezbilling.repository.*;
-import com.ezaz.ezbilling.repository.mysql.*;
 import com.ezaz.ezbilling.services.ApiServices;
 import com.ezaz.ezbilling.services.CsvExportService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,22 +30,6 @@ import java.util.stream.Stream;
 @Service
 public class EzbillingBoImpl implements EzbillingBo {
 
-//    private static final Map<Integer, String> monthMap = new HashMap<>();
-//
-//    static {
-//        monthMap.put(1, "January");
-//        monthMap.put(2, "February");
-//        monthMap.put(3, "March");
-//        monthMap.put(4, "April");
-//        monthMap.put(5, "May");
-//        monthMap.put(6, "June");
-//        monthMap.put(7, "July");
-//        monthMap.put(8, "August");
-//        monthMap.put(9, "September");
-//        monthMap.put(10, "October");
-//        monthMap.put(11, "November");
-//        monthMap.put(12, "December");
-//    }
 
     @Autowired
     private MongoTemplate mongoTemplate;
@@ -87,15 +69,10 @@ public class EzbillingBoImpl implements EzbillingBo {
     private final StockItemDetails stockItemDetails;
 
     private final StockRepository stockRepository;
-    private final JpaCustomerRepo jpaCustomerRepo;
-    private final JpaProductRepo jpaProductRepo;
-    private final JpaSoldStockRepo jpaSoldStockRepo;
-    private final JpaCompanyRepo jpaCompanyRepo;
-    private final JpaBillsAmountRepo jpaBillsAmountRepo;
     private final BalanceDetailsRepository balanceDetailsRepository;
     private final UqcAndDescriptionRepository uqcAndDescriptionRepository;
 
-    public EzbillingBoImpl(CustomerRepository customerRepository, GstCodeDetailsRepo gstCodeDetailsRepo, ChangeDateFormatRepo changeDateFormatRepo, BillAmountRepository billAmountRepository, CompanyRepository companyRepository, ProductRepository productRepository, ProductDetailsRepository productDetailsRepository, CompanyDetailsRepository companyDetailsRepository, CustomerRepositoryCustom customerRepositoryCustom, UsersRepository usersRepository, BillingRepositry billingRepositry, BillItemsRepository billItemsRepository, PercentageUtils percentageUtils, StockItemDetails stockItemDetails, StockRepository stockRepository, JpaCustomerRepo jpaCustomerRepo, JpaProductRepo jpaProductRepo, JpaSoldStockRepo jpaSoldStockRepo, JpaCompanyRepo jpaCompanyRepo, JpaBillsAmountRepo jpaBillsAmountRepo, BalanceDetailsRepository balanceDetailsRepository, UqcAndDescriptionRepository uqcAndDescriptionRepository) {
+    public EzbillingBoImpl(CustomerRepository customerRepository, GstCodeDetailsRepo gstCodeDetailsRepo, ChangeDateFormatRepo changeDateFormatRepo, BillAmountRepository billAmountRepository, CompanyRepository companyRepository, ProductRepository productRepository, ProductDetailsRepository productDetailsRepository, CompanyDetailsRepository companyDetailsRepository, CustomerRepositoryCustom customerRepositoryCustom, UsersRepository usersRepository, BillingRepositry billingRepositry, BillItemsRepository billItemsRepository, PercentageUtils percentageUtils, StockItemDetails stockItemDetails, StockRepository stockRepository, BalanceDetailsRepository balanceDetailsRepository, UqcAndDescriptionRepository uqcAndDescriptionRepository) {
 
         this.customerRepository = customerRepository;
         this.gstCodeDetailsRepo = gstCodeDetailsRepo;
@@ -112,11 +89,6 @@ public class EzbillingBoImpl implements EzbillingBo {
         this.percentageUtils = percentageUtils;
         this.stockItemDetails = stockItemDetails;
         this.stockRepository = stockRepository;
-        this.jpaCustomerRepo = jpaCustomerRepo;
-        this.jpaProductRepo = jpaProductRepo;
-        this.jpaSoldStockRepo = jpaSoldStockRepo;
-        this.jpaCompanyRepo = jpaCompanyRepo;
-        this.jpaBillsAmountRepo = jpaBillsAmountRepo;
         this.balanceDetailsRepository = balanceDetailsRepository;
 
         this.uqcAndDescriptionRepository = uqcAndDescriptionRepository;
@@ -849,216 +821,6 @@ public class EzbillingBoImpl implements EzbillingBo {
    }
 
 
-
-   public void copyCustomers(String dgst){
-         List<JpaCustomer> jpaCustomers=jpaCustomerRepo.findAll();
-       for (JpaCustomer jpaCustomer : jpaCustomers
-       ){
-           Customer customer = new Customer();
-           customer.setCno(String.valueOf(jpaCustomer.getCno()));
-           customer.setCadd(jpaCustomer.getCadd());
-           customer.setCname(jpaCustomer.getCname());
-           customer.setDgst(dgst);
-           customer.setIsigst(jpaCustomer.getIsigst());
-           customer.setCpno(jpaCustomer.getCpno());
-           customer.setLegal_name(jpaCustomer.getLegal_name());
-           customer.setSupplyplace(jpaCustomer.getSupplyplace());
-           customer.setCtno(jpaCustomer.getCtno());
-           customerRepository.save(customer);
-       }
-
-   }
-
-   public void copyProducts(String dgst){
-   List<JpaProduct> jpaProducts= jpaProductRepo.findAll();
-       for (JpaProduct jpaProduct:jpaProducts
-            ) {
-           ProductDetails productDetails = new ProductDetails();
-           productDetails.setPname(jpaProduct.getPname().trim());
-           productDetails.setDgst(dgst);
-           productDetails.setCess(0);
-           productDetails.setRate(jpaProduct.getRate());
-           productDetails.setPcom(jpaProduct.getPcom());
-           productDetails.setHsn_code(jpaProduct.getHsnCode());
-           productDetails.setRel_prod(jpaProduct.getRelProd());
-           productDetails.setIs_sp(jpaProduct.getIsSp());
-           productDetails.setMrp(jpaProduct.getMrp());
-           productDetails.setVatp(jpaProduct.getVatp());
-           productDetails.setUnites_per(jpaProduct.getUnitesPer());
-           productDetails.setNo_of_unites(jpaProduct.getNoOfUnites());
-           productRepository.save(productDetails);
-       }
-
-
-
-   }
-    public void copySoldStock(String dgst){
-    List<JpaSoldStock> jpaSoldStocks = jpaSoldStockRepo.findAllDistinct();
-        for (JpaSoldStock jpaSoldStock:jpaSoldStocks
-             ) {
-            BillingDetails billingDetails = new BillingDetails();
-            billingDetails.setBilling_date(jpaSoldStock.getBillingDate().toString());
-            Customer customer = customerRepository.findByCno(jpaSoldStock.getCno().toString());
-            billingDetails.setCno(customer.getId());
-            ProductDetails productDetails= productRepository.findByPname(jpaSoldStock.getProductName().trim());
-            if(productDetails==null){
-                Map<String, String> products = new HashMap<>();
-
-
-                products.put("Lemon rice 5/-", "Lemon rice 5/- (40pcs)");
-                products.put("Chilly 25G 10/-", "Chilly Powder 10/-(40pcs)");
-                products.put("Chilly 500G", "Chilly Powder 500G");
-                products.put("Chilly 25G 10/-(40pcs)", "Chilly Powder 10/-(40pcs)");
-                products.put("Chilly Powder 500G ", "Chilly Powder 500G");
-                products.put("Samar 100G offer", "Sambar 100G offer");
-                products.put("Apis Honey 25g (24pcs)", "Apis Honey 20g (24pcs)");
-                products.put("AACHI CHICKEN 5/-(600P)", "AACHI CHICKEN MASALA 5/-(600P)");
-                products.put("AACHI GARAM 5/-(600P)", "AACHI GARAM MASALA 5/-(600P)");
-                products.put("AACHI MUTTON  5/-(1200P)", "AACHI MUTTON MASALA  5/-(1200P)");
-                products.put("TF-GGP 5/-", "TF-GGP 5/- (30p)");
-                products.put("fru str jelly", "fru str jelly");
-                products.put("Lemon rice 5/- ", "Lemon rice 5/- (40pcs)");
-                products.put("fru str jelly ", "fru str jelly");
-                products.put("TF-GGP 5/- (30p) ", "TF-GGP 5/- (30p)");
-                products.put("Puliyogare 10/- ", "Puliyogare 10/- ");
-                products.put("Chilly 500G ", "Chilly Powder 10/-(40pcs)");
-                products.put("Xtra Dish Wash Powder ", "Xtra Dish Wash Powder ");
-                products.put("Chilly powder 50g ", "Chilly powder 50g ");
-                products.put("Samar powder 500G", "Sambar powder 500G");
-                products.put("AACHI PEPER 6/-(600P)", "AACHI PEPER POWDER 6/-(600P)");
-                products.put("Aachi Chicken Masala 10/-(60pcs)", "Aachi Chicken Masala 10/-(50pcs)");
-                products.put("Aachi Mutton Masala 10/-(60pcs)", "Aachi Mutton Masala 10/-(50pcs)");
-                products.put("Aachi Biryani Masala 15/- (60pcs)", "Aachi Biryani Masala 15/- (50pcs)");
-                products.put("Aachi Garam Masala 10/-(60pcs)", "Aachi Garam Masala 10/-(50pcs)");
-                products.put("KESAR BADAM pillow 48x150g", "KESAR BADAM pillow 48x200g");
-                products.put("OAT MEAL DIGESTIVE 1+1 PROMO", "oat meal digestive 1+1*(36pcs )");
-                products.put("AF PET 500ml", "AF PET 600ml");
-                products.put("ATHASIYA DHOOP", "ATHISAYA DHOOP");
-                products.put("Ambica darbar 20g", "Ambica darbar 35g");
-                products.put("naviedya 72", "Naivedya 72");
-                products.put("CHOCORIPPLEpillow48x2000g", "CHOCORIPPLEpillow48x200g");
-                products.put("Unibic chocochip150gdp", "Unibic chocochip150g dp");
-                products.put("OAT MEAL 12x16x37.5g", "OAT MEAL 12x16x50g");
-                products.put("AMR Back pain rollon", "AMR Back pain rollon 50ml");
-                products.put("NO-1", "NO-1 TEA");
-                products.put("Bakingpowder 500g", "Bakingpowder 50g");
-                products.put("naviedya 32", "Naivedya 32");
-                products.put("Amchoor powder68100g", "Amchoor powder100g");
-                products.put("sofit ltr", "SOFIT 1 LTR (V) *");
-                products.put("caramella Lolipop-2/-", "Caramella Lolipop-2/-");
-                products.put("OMD 1+1 48 PIECES", "Unibic omd10/-");
-                products.put("sugar free choco swrill 75g", "sugarfree chocoswrill75g");
-                products.put("Xtra.det.kingsize 325g(40p)", "Xtra.det.kingsize 300g(40p)");
-                products.put("FLU ECLAIRS POUCH 1/-", "F ECLAIRS POUCH 1/-");
-                products.put("sugarfree butter 75*", "sugarfree butter 75g*");
-                products.put("sugarfree oats 75*", "sugarfree oats 75g*");
-                products.put("sugarfree cashew75*", "sugarfree cashew75g*");
-                products.put("ENEGA bodylotion(24p)", "ENEGA bodylotion 20ml(24p)");
-                products.put("B fizz", "B fizz 160 ml");
-                products.put("Aachi Garam masala 10/-(1000p)", "Aachi Garam masala 10/-(500p)");
-                products.put("BUTTERLY 12x12x35g", "BUTTERLY 12x16x35g");
-                products.put("Aachi chilly powder 1kg", "Aachi chilly powder 50gms");
-                products.put("Chips C&N (15stx14p)", "Chips C&N (16st x 14p)");
-                products.put("Parle-G 75/- (16p)", "Parle-G 75/- (14p)");
-                products.put("Chips TT (15stx14p)", "Chips TT (16st x14p)");
-                products.put("A CHICKEN  \\10/-(50P)", "A CHICKEN 10/-(50P)");
-                products.put("Chips C&S (15stx14p)", "Chips C&S (16st x 14p)");
-
-
-                if(products.containsKey(jpaSoldStock.getProductName())){
-                    ProductDetails productDetails2 = productRepository.findByPname(products.get(jpaSoldStock.getProductName().trim()));
-                    billingDetails.setProduct_name(productDetails2.getId());
-                }
-                else {
-                    Scanner scanner = new Scanner(System.in);
-                    JpaSoldStock jpaSoldStock1 = jpaSoldStock;
-                    jpaSoldStock1.setAmount(jpaSoldStock.getAmount() / jpaSoldStock1.getQty());
-//                System.out.println("product bill details"+jpaSoldStock1.toString());
-                    printProductTable(jpaSoldStock);
-                    System.out.print("Product " + jpaSoldStock.getProductName() + " got renamed Please enter Current name");
-                    String productName = scanner.nextLine();
-                    ProductDetails productDetails1 = productRepository.findByPname(productName);
-                    billingDetails.setProduct_name(productDetails1.getId());
-                }
-            }else {
-                billingDetails.setProduct_name(productDetails.getId());
-            }
-            billingDetails.setAmount(jpaSoldStock.getAmount()/jpaSoldStock.getQty());
-            billingDetails.setDisc(jpaSoldStock.getDisc());
-            billingDetails.setDgst(dgst);
-            billingDetails.setQty(jpaSoldStock.getQty());
-            billingDetails.setFree(jpaSoldStock.getFree().toString());
-            billingDetails.setHsn_code(jpaSoldStock.getHsnCode());
-            billingDetails.setProduct_gst(jpaSoldStock.getProductGst());
-            billingDetails.setUnites_per(jpaSoldStock.getUnitesPer());
-            billingDetails.setMrp(jpaSoldStock.getMrp());
-            billingDetails.setProduct_company(jpaSoldStock.getProductCompany());
-            billingDetails.setAmount_after_disc(jpaSoldStock.getAmountAfterDisc());
-            billingDetails.setBno(jpaSoldStock.getBno());
-            billItemsRepository.save(billingDetails);
-              }
-
-
-    }
-
-    public void copyCompanyDetails(String dgst){
-//        List<JpaCompanyGstList> jpaCompanyGstLists= jpaCompanyRepo.findCompanyGstGroupedByCname();
-        List<Object[]> results = jpaCompanyRepo.findCompanyGstGroupedByCname();
-
-        List<JpaCompanyGstList> companies = new ArrayList<>();
-        for (Object[] result : results) {
-            Integer cid = (Integer) result[0];
-            String cname = (String) result[1];
-            List<Integer> gstList = Arrays.stream(((String) result[2]).split(","))
-                    .map(Integer::parseInt)
-                    .collect(Collectors.toList());
-            companies.add(new JpaCompanyGstList(cid, cname, gstList));
-        }
-
-//        return companies;
-
-        for (JpaCompanyGstList jpaCompanyGstList : companies
-        ){
-            CompanyDetails companyDetails = new CompanyDetails();
-            companyDetails.setDgst(dgst);
-            companyDetails.setName(jpaCompanyGstList.getCname());
-            companyDetails.setGstPercentage(jpaCompanyGstList.getGstList());
-            companyRepository.save(companyDetails);
-        }
-    }
-
-    public  void printProductTable(JpaSoldStock jpaSoldStock) {
-
-        // Print the table header
-        System.out.printf("%-5s %-5s %-15s %-5s %-5s %-10s %-10s %-5s %-10s %-10s %-10s %-15s %-5s %-15s %-5s%n",
-                "Cno", "Bno", "Product Name", "GST", "Qty", "Amount", "Billing Date", "Free", "HSN Code", "Units/Per", "MRP", "Product Company", "Disc", "Amount After Disc", "ID");
-        System.out.println("--------------------------------------------------------------------------------------------------------------------------------------------------------------------");
-
-        // Print each product
-//        for (Product product : products) {
-            System.out.printf("%-5s %-5s %-15s %-5s %-5s %-10s %-10s %-5s %-10s %-10s %-10s %-15s %-5s %-15s %-5s%n",
-                    jpaSoldStock.getCno(), jpaSoldStock.getBno(), jpaSoldStock.getProductName(), jpaSoldStock.getProductGst(), jpaSoldStock.getQty(),
-                    jpaSoldStock.getAmount(), jpaSoldStock.getBillingDate(), jpaSoldStock.getFree(), jpaSoldStock.getHsnCode(),
-                    jpaSoldStock.getUnitesPer(), jpaSoldStock.getMrp(), jpaSoldStock.getProductCompany(), jpaSoldStock.getDisc(),
-                    jpaSoldStock.getAmountAfterDisc(), jpaSoldStock.getId());
-//        }
-    }
-
-    public void copyBillsAmount(String dgst){
-        List<JpaBillsAmount> jpaBillsAmounts = jpaBillsAmountRepo.findAll();
-        for (JpaBillsAmount jpaBillsAmount:jpaBillsAmounts
-             ) {
-            BillAmountDetails billAmountDetails = new BillAmountDetails();
-            Customer customer = customerRepository.findByCno(jpaBillsAmount.getCno().toString());
-            billAmountDetails.setCno(customer.getId());
-            billAmountDetails.setAmount(jpaBillsAmount.getAmount());
-            billAmountDetails.setDate(jpaBillsAmount.getDate().toString());
-            billAmountDetails.setBno(jpaBillsAmount.getBno());
-            billAmountDetails.setDgst(dgst);
-            billAmountRepository.save(billAmountDetails);
-
-        }
-    }
 
    public void copyCustomerToBalanceDetails(String dgst){
         List<Customer> customerList = customerRepository.findAll();

@@ -67,11 +67,11 @@ public interface EzbillingBo {
     public void correctAmount();
     public List<BillAmountDetails> getBillsAmount(String dgst);
     public List<SumOfBillsAmount> getSumOfBillsAmount(String date);
-    public void copyCustomers(String dgst);
-    public void copyProducts(String dgst);
-    public void copySoldStock(String dgst);
-    public void copyCompanyDetails(String dgst);
-    public void copyBillsAmount(String dgst);
+//    public void copyCustomers(String dgst);
+//    public void copyProducts(String dgst);
+//    public void copySoldStock(String dgst);
+//    public void copyCompanyDetails(String dgst);
+//    public void copyBillsAmount(String dgst);
     public void copyCustomerToBalanceDetails(String dgst);
     public void modifyBalanceDetails(BalanceDetails balanceDetails);
     List<BalanceDetails> getBalanceDetails(String dgst);

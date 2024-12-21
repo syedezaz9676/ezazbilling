@@ -1,6 +1,5 @@
 package com.ezaz.ezbilling;
 
-import com.ezaz.ezbilling.repository.mysql.JpaCustomerRepo;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
@@ -10,8 +9,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication
 @ComponentScan(value = "com.ezaz.ezbilling")
-@EntityScan("com.ezaz.ezbilling")
-@EnableJpaRepositories (basePackageClasses = JpaCustomerRepo.class)
+//@EntityScan("com.ezaz.ezbilling")
 @EnableScheduling
 public class EzbillingApplication {
 
